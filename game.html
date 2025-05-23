@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>お題ゲーム</title>
   <style>
     :root {
@@ -42,7 +42,7 @@
       transition: transform 0.6s ease;
     }
     .container.starting h1 {
-      transform: translateY(-40px);
+      transform: translateY(-60px);
     }
     .notice {
       margin-bottom: 20px;
@@ -62,10 +62,9 @@
       transition: transform .3s ease, background .3s ease, opacity .3s ease;
     }
     .btn:hover { transform: translateY(-2px); background: #6246ea; }
-    .btn.secondary {
-      background: #999;
-    }
+    .btn.secondary { background: #999; }
     .btn.secondary:hover { background: #777; }
+
     /* Spinner */
     .spinner {
       border: 4px solid var(--accent-light);
@@ -79,6 +78,7 @@
       0% { transform: rotate(0); }
       100% { transform: rotate(360deg); }
     }
+
     /* Cards */
     .cards {
       display: grid;
@@ -96,29 +96,22 @@
       transform: translateY(20px);
       animation: slideFadeIn .5s forwards;
     }
-    .card.completed {
-      background: var(--accent-light);
-    }
+    .card.completed { background: var(--accent-light); }
     .card h3 { margin: 0 0 8px; font-size: 1.2em; color: var(--accent); }
     .card p  { margin: 4px 0; font-size: 1em; color: var(--text-main); }
     .card small { color: var(--text-secondary); }
-    .actions {
-      margin-top: 12px;
-      text-align: right;
-    }
+    .actions { margin-top: 12px; text-align: right; }
     .actions button {
-      margin-left: 8px;
-      padding: 6px 12px;
-      font-size: .9em;
-      border: none;
-      border-radius: var(--radius);
-      cursor: pointer;
+      margin-left: 8px; padding: 6px 12px;
+      font-size: .9em; border-radius: var(--radius);
+      cursor: pointer; border: none;
     }
     .achieve { background: #4caf50; color: #fff; }
     .fail    { background: #ccc;   color: #333; }
     @keyframes slideFadeIn {
       to { opacity: 1; transform: translateY(0); }
     }
+
     /* Results */
     #resultArea h2 {
       color: var(--accent);
@@ -145,8 +138,7 @@
     }
     .result-list {
       list-style: none;
-      padding: 0;
-      margin: 0;
+      padding: 0; margin: 0;
       text-align: left;
       opacity: 0;
       animation: slideFadeIn .5s forwards;
@@ -176,8 +168,8 @@
     <div id="gameArea" style="display:none;">
       <div id="spinner" class="spinner" style="display:none;"></div>
       <div id="cardsContainer" class="cards"></div>
-      <button id="nextRoundBtn" class="btn" style="display:none; opacity:0;">次のラウンド</button>
-      <button id="endBtn" class="btn secondary" style="display:none; opacity:0;">ゲーム終了</button>
+      <button id="nextRoundBtn" class="btn" style="display:none;"></button>次のラウンド</button>
+      <button id="endBtn" class="btn secondary" style="display:none;"></button>ゲーム終了</button>
     </div>
 
     <!-- Result Screen -->
@@ -192,7 +184,7 @@
 
   <script>
     const BASE_URL = 'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
-    let users = [], usedTopics = [];
+    let users = [];
 
     const container     = document.getElementById('container');
     const preStart      = document.getElementById('preStart');
@@ -201,13 +193,11 @@
     const spinner       = document.getElementById('spinner');
     const resultSpinner = document.getElementById('resultSpinner');
 
-    document.getElementById('startBtn').onclick = startGame;
-    document.getElementById('nextRoundBtn').onclick = nextRound;
-    document.getElementById('endBtn').onclick = () => {
-      if (confirm('ゲームを終了してよろしいですか？')) endGame();
-    };
-    document.getElementById('backBtn').onclick = () => location.href='index.html';
-    document.getElementById('menuBtn').onclick = () => location.href='index.html';
+    document.getElementById('startBtn').onclick      = startGame;
+    document.getElementById('nextRoundBtn').onclick  = nextRound;
+    document.getElementById('endBtn').onclick        = () => { if (confirm('ゲームを終了してよろしいですか？')) endGame(); };
+    document.getElementById('backBtn').onclick       = () => location.href='index.html';
+    document.getElementById('menuBtn').onclick       = () => location.href='index.html';
 
     async function resetScores() {
       await fetch(BASE_URL, {
@@ -217,33 +207,35 @@
     }
 
     async function startGame() {
-      // animate title up
       container.classList.add('starting');
       await resetScores();
-      usedTopics = [];
 
       const res = await fetch(`${BASE_URL}?action=getUsers`);
       const { users: u } = await res.json();
       users = u.map(x => x.name);
       if (!users.length) return alert('参加ユーザがいません');
 
-      // show game area
       preStart.style.display = 'none';
       gameArea.style.display = 'block';
       await nextRound();
     }
 
     async function nextRound() {
-      // hide buttons, show spinner
       document.getElementById('nextRoundBtn').style.display = 'none';
       document.getElementById('endBtn').style.display       = 'none';
+
+      const cont = document.getElementById('cardsContainer');
+      cont.innerHTML = '';
+      cont.style.display = 'none';
       spinner.style.display = 'block';
 
-      // fetch all topics at once
-      const res = await fetch(`${BASE_URL}?action=getTopics&count=${users.length}`);
+      const res = await fetch(
+        `${BASE_URL}?action=getTopics&count=${users.length}`
+      );
       const { topics } = await res.json();
 
       spinner.style.display = 'none';
+      cont.style.display = 'grid';
       renderCards(topics);
     }
 
@@ -252,10 +244,10 @@
       cont.innerHTML = '';
       topics.forEach((t, i) => {
         const card = document.createElement('div');
-        card.className = 'card';
-        card.style.animationDelay = `${i * 0.2}s`;
-        card.dataset.idx = i;
-        card.innerHTML = `
+        card.className    = 'card';
+        card.style.animationDelay = `${i * 0.4}s`;
+        card.dataset.idx  = i;
+        card.innerHTML    = `
           <h3>${users[i]}</h3>
           <p>${t.topic}</p>
           <small>${t.score}</small>
@@ -282,20 +274,18 @@
       const allDone = [...document.querySelectorAll('.card')]
         .every(c => c.querySelector('button').disabled);
       if (allDone) {
-        const btns = [ 'nextRoundBtn', 'endBtn' ];
-        btns.forEach((id, i) => {
+        ['nextRoundBtn','endBtn'].forEach((id, i) => {
           const el = document.getElementById(id);
           el.style.display = 'inline-block';
-          el.style.animation = 'slideFadeIn .5s forwards';
-          el.style.animationDelay = `${i * 0.2 + 0.5}s`;
           el.style.opacity = '0';
+          el.style.animation = 'slideFadeIn .5s forwards';
+          el.style.animationDelay = `${i * 0.4 + 1}s`;
         });
       }
     }
 
     async function endGame() {
-      // hide game, show spinner
-      gameArea.style.display = 'none';
+      gameArea.style.display   = 'none';
       resultArea.style.display = 'block';
       resultSpinner.style.display = 'block';
 
@@ -303,37 +293,32 @@
       const { users: fu } = await res.json();
       fu.sort((a,b) => b.score - a.score);
 
-      // hide static result elements until ready
-      document.getElementById('title').textContent = '結果発表';
       resultSpinner.style.display = 'none';
 
-      // top 3: show 3rd→1st
       const topC = document.getElementById('topContainer');
       topC.innerHTML = '';
-      [2,1,0].forEach((pos,i) => {
+      [2,1,0].forEach((pos, i) => {
         const u = fu[pos];
         const c = document.createElement('div');
         c.className = 'card top-card';
-        c.style.animationDelay = `${i * 0.3 + 0.2}s`;
+        c.style.animationDelay = `${i * 0.5 + 0.5}s`;
         c.innerHTML = `<h3>#${pos+1} ${u.name}</h3><p>最終スコア: ${u.score}</p>`;
         topC.appendChild(c);
       });
 
-      // list 4th+ 
       const listC = document.getElementById('listContainer');
       listC.innerHTML = '';
-      fu.slice(3).forEach((u,i) => {
+      fu.slice(3).forEach((u, i) => {
         const li = document.createElement('li');
-        li.style.animationDelay = `${1.2 + i*0.1}s`;
+        li.style.animationDelay = `${2 + i*0.3}s`;
         li.innerHTML = `<span>${i+4}. ${u.name}</span><span>${u.score}</span>`;
         listC.appendChild(li);
       });
 
-      // show menu button
       const menuBtn = document.getElementById('menuBtn');
-      menuBtn.style.animation = 'slideFadeIn .5s forwards';
-      menuBtn.style.animationDelay = '1.5s';
       menuBtn.style.opacity = '0';
+      menuBtn.style.animation = 'slideFadeIn .5s forwards';
+      menuBtn.style.animationDelay = '3s';
     }
   </script>
 </body>

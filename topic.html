@@ -1,58 +1,154 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>お題連続表示</title>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; padding: 40px; text-align: center; }
-    .topic-box {
-      margin: 40px auto;
+    :root {
+      --bg: #f9f9f9;
+      --accent: #7F5AF0;
+      --accent-light: rgba(127, 90, 240, 0.1);
+      --text-main: #333;
+      --text-secondary: #666;
+      --radius: 12px;
+      --shadow: 0 4px 16px rgba(0,0,0,0.1);
+      --transition: 0.4s ease;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
       padding: 20px;
-      border: 3px solid #7F5AF0;
-      border-radius: 8px;
-      max-width: 600px;
-      font-size: 2em;
-      color: #333;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 640px;
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      text-align: center;
+    }
+    h1 {
+      margin: 0 0 16px;
+      color: var(--accent);
+      font-size: 1.8em;
+    }
+    .topic-card {
+      position: relative;
+      padding: 40px 20px;
+      background: var(--accent-light);
+      border-radius: var(--radius);
+      overflow: hidden;
+      min-height: 180px;
+    }
+    .topic-main {
+      font-size: 2.4em;
+      font-weight: bold;
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .topic-score {
+      margin-top: 12px;
+      font-size: 1.2em;
+      color: var(--text-secondary);
+      opacity: 0;
+      transition: opacity var(--transition);
     }
     button {
-      margin-top: 20px;
-      padding: 10px 20px;
+      margin: 16px 8px 0;
+      padding: 12px 24px;
       font-size: 1em;
-      background: #7F5AF0;
-      color: #fff;
       border: none;
-      border-radius: 8px;
+      border-radius: var(--radius);
       cursor: pointer;
+      transition: background var(--transition), transform var(--transition);
+      box-shadow: var(--shadow);
+      background: var(--accent);
+      color: #fff;
     }
-    button:hover { background: #6246ea; }
+    button:hover { background: #6246ea; transform: translateY(-2px); }
+    /* アニメーション keyframes */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes zoomIn {
+      from { transform: scale(0.7); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    @keyframes slideIn {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes bounceIn {
+      0% { transform: scale(0.5); opacity: 0; }
+      60% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+    .fade-in { animation: fadeIn 0.8s ease forwards; }
+    .zoom-in { animation: zoomIn 0.6s ease forwards; }
+    .slide-in { animation: slideIn 0.7s ease forwards; }
+    .bounce-in { animation: bounceIn 0.9s ease forwards; }
   </style>
 </head>
 <body>
-  <h1>お題だけ連続表示</h1>
-  <div class="topic-box" id="topic">ロード中…</div>
-  <button id="next-btn">次のお題を見る</button>
+  <div class="container">
+    <h1>お題だけ表示</h1>
+    <div class="topic-card">
+      <div id="topicMain" class="topic-main">ロード中…</div>
+      <div id="topicScore" class="topic-score"></div>
+    </div>
+    <button id="nextBtn">次のお題を見る</button>
+    <button id="backBtn">メインメニューに戻る</button>
+  </div>
 
   <script>
-    // ★必ずあなたの「デプロイ済みWebアプリの exec URL」をコピペしてください
     const BASE_URL = 'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
+    const animations = ['fade-in', 'zoom-in', 'slide-in', 'bounce-in'];
 
-    async function nextTopic() {
+    async function showTopic() {
+      const mainEl = document.getElementById('topicMain');
+      const scoreEl = document.getElementById('topicScore');
+      // リセット
+      animations.forEach(cls => {
+        mainEl.classList.remove(cls);
+        scoreEl.classList.remove(cls);
+      });
+      mainEl.style.opacity = 0;
+      scoreEl.style.opacity = 0;
+
       try {
         const res = await fetch(`${BASE_URL}?action=getTopic`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) throw new Error(res.status);
         const { topic, score } = await res.json();
-        document.getElementById('topic').innerText = `${topic}（${score}点）`;
+        // テキスト更新
+        mainEl.textContent = topic;
+        scoreEl.textContent = `${score} 点`;
+        // ランダムアニメーション適用
+        const animMain = animations[Math.floor(Math.random() * animations.length)];
+        mainEl.classList.add(animMain);
+        // スコアは少し遅らせてフェードイン
+        setTimeout(() => scoreEl.classList.add('fade-in'), 600);
       } catch (err) {
+        mainEl.textContent = 'お題の取得に失敗しました';
+        scoreEl.textContent = '';
         console.error(err);
-        document.getElementById('topic').innerText = 'お題の取得に失敗しました';
       }
     }
 
-    // ページ読み込み時に即実行
-    nextTopic();
-
-    // ボタン押下でも実行
-    document.getElementById('next-btn').addEventListener('click', nextTopic);
+    document.getElementById('nextBtn').addEventListener('click', showTopic);
+    document.getElementById('backBtn').addEventListener('click', () => {
+      location.href = 'index.html';
+    });
+    // 初回表示
+    window.addEventListener('load', showTopic);
   </script>
 </body>
 </html>

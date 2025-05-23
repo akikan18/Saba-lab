@@ -116,26 +116,31 @@
     async function showTopic() {
       const mainEl = document.getElementById('topicMain');
       const scoreEl = document.getElementById('topicScore');
-      // リセット
+      // アニメーション前のリセット
       animations.forEach(cls => {
         mainEl.classList.remove(cls);
         scoreEl.classList.remove(cls);
       });
-      mainEl.style.opacity = 0;
-      scoreEl.style.opacity = 0;
 
       try {
         const res = await fetch(`${BASE_URL}?action=getTopic`);
         if (!res.ok) throw new Error(res.status);
         const { topic, score } = await res.json();
-        // テキスト更新
+        // テキスト更新（「点」は不要のため削除）
         mainEl.textContent = topic;
-        scoreEl.textContent = `${score} 点`;
-        // ランダムアニメーション適用
+        scoreEl.textContent = score;
+
+        // メインお題にランダムアニメーション
         const animMain = animations[Math.floor(Math.random() * animations.length)];
+        // リフロー強制
+        void mainEl.offsetWidth;
         mainEl.classList.add(animMain);
-        // スコアは少し遅らせてフェードイン
-        setTimeout(() => scoreEl.classList.add('fade-in'), 600);
+
+        // スコアを少し遅らせてフェードイン
+        setTimeout(() => {
+          void scoreEl.offsetWidth;
+          scoreEl.classList.add('fade-in');
+        }, 600);
       } catch (err) {
         mainEl.textContent = 'お題の取得に失敗しました';
         scoreEl.textContent = '';

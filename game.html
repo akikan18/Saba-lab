@@ -119,18 +119,21 @@
     }
 
     async function nextRound() {
-      document.getElementById('nextRoundBtn').style.display = 'none';
-      document.getElementById('endBtn').style.display = 'none';
-      assignments = await Promise.all(users.map(async name=>{
-        let topicObj;
-        do {
-          const res = await fetch(`${BASE_URL}?action=getTopic`);
-          topicObj = await res.json();
-        } while (usedTopics.includes(topicObj.topic));
-        usedTopics.push(topicObj.topic);
-        return { name, topic: topicObj.topic, score: topicObj.score, done:false };
-      }));
-      renderCards();
+      async function nextRound() {
+        document.getElementById('nextRoundBtn').style.display = 'none';
+        document.getElementById('endBtn').style.display     = 'none';
+        // 一括で topics を取得
+        const res = await fetch(`${BASE_URL}?action=getTopics&count=${users.length}`);
+        const { topics } = await res.json();
+        // users の配列に合わせて assignments を構築
+        assignments = users.map((name, i) => ({
+            name,
+            topic: topics[i].topic,
+            score: topics[i].score,
+            done: false
+        }));
+        renderCards();
+        }
     }
 
     function renderCards() {

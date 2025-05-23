@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8"/>
+  <title>お題ゲーム</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; padding: 20px; }
+    h1 { text-align: center; color: #7F5AF0; }
+    #start-btn, #end-btn {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 30px;
+      font-size: 1em;
+      background: #7F5AF0;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #assign-list { list-style: none; padding: 0; max-width: 600px; margin: 0 auto; }
+    #assign-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      border-bottom: 1px solid #eee;
+    }
+    #assign-list button {
+      margin-left: 8px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .achieve { background: #4caf50; color: #fff; }
+    .fail    { background: #ccc; }
+  </style>
+</head>
+<body>
+  <h1>お題ゲーム</h1>
+  <button id="start-btn" onclick="startGame()">ゲーム開始</button>
+  <div id="game-area" style="display:none;">
+    <ul id="assign-list"></ul>
+    <button id="end-btn" onclick="endGame()" style="display:none;">ゲーム終了</button>
+  </div>
+
+  <script>
+    const BASE_URL = 'https://script.google.com/macros/s/＜あなたのID＞/exec';
+    let users = [];
+    let assignments = [];
+
+    async function startGame() {
+      // 1) ユーザ一覧取得
+      const resU = await fetch(`${BASE_URL}?action=getUsers`);
+      const dataU = await resU.json();
+      users = dataU.users.map(u=>u.name);
+
+      // 2) 各ユーザにお題を割り当て
+      assignments = await Promise.all(
+        users.map(async name => {
+          const resT = await fetch(`${BASE_URL}?action=getTopic`);
+          const { topic, score } = await resT.json();
+          return { name, topic, score, done: false };
+        })
+      );
+
+      document.getElementById('start-btn').style.display = 'none';
+      document.getElementById('game-area').style.display = 'block';
+      renderAssignments();
+    }
+
+    function renderAssignments() {
+      const ul = document.getElementById('assign-list');
+      ul.innerHTML = '';
+      assignments.forEach((a, i) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span>${a.name}: ${a.topic}（${a.score}点）</span>
+          <span>
+            <button class="achieve" ${a.done?'disabled':''} onclick="onResult(${i},true)">達成</button>
+            <button class="fail"    ${a.done?'disabled':''} onclick="onResult(${i},false)">未達成</button>
+          </span>`;
+        ul.appendChild(li);
+      });
+    }
+
+    async function onResult(index, achieved) {
+      assignments[index].done = true;
+      if (achieved) {
+        // スコア加算
+        await fetch(BASE_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'complete', name: assignments[index].name })
+        });
+      }
+      renderAssignments();
+
+      // 全ユーザ完了したら次のラウンド
+      if (assignments.every(a=>a.done)) {
+        // 小休止の後に次ラウンド
+        setTimeout(async () => {
+          assignments = await Promise.all(
+            users.map(async name => {
+              const resT = await fetch(`${BASE_URL}?action=getTopic`);
+              const { topic, score } = await resT.json();
+              return { name, topic, score, done: false };
+            })
+          );
+          renderAssignments();
+          document.getElementById('end-btn').style.display = 'block';
+        }, 500);
+      }
+    }
+
+    async function endGame() {
+      // 最終スコア取得＆結果表示
+      const res = await fetch(`${BASE_URL}?action=getUsers`);
+      const { users: finalUsers } = await res.json();
+      document.body.innerHTML = `
+        <h1>結果発表</h1>
+        <div style="max-width:400px; margin: 0 auto; text-align:left;">
+          ${finalUsers.map(u=>`<p>${u.name}: ${u.score}点</p>`).join('')}
+          <button onclick="location.reload()">最初に戻る</button>
+        </div>`;
+    }
+  </script>
+</body>
+</html>

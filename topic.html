@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8"/>
+  <title>お題連続表示</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; padding: 40px; text-align: center; }
+    .topic-box {
+      margin: 40px auto;
+      padding: 20px;
+      border: 3px solid #7F5AF0;
+      border-radius: 8px;
+      max-width: 600px;
+      font-size: 2em;
+      color: #333;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      background: #7F5AF0;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover { background: #6246ea; }
+  </style>
+</head>
+<body>
+  <h1>お題だけ連続表示</h1>
+  <div class="topic-box" id="topic">ロード中…</div>
+  <button onclick="nextTopic()">次のお題を見る</button>
+
+  <script>
+    const BASE_URL = 'https://script.google.com/macros/s/＜あなたのID＞/exec';
+
+    document.addEventListener('DOMContentLoaded', nextTopic);
+
+    async function nextTopic() {
+      const res = await fetch(`${BASE_URL}?action=getTopic`);
+      const { topic, score } = await res.json();
+      document.getElementById('topic').innerText = `${topic}（${score}点）`;
+    }
+  </script>
+</body>
+</html>

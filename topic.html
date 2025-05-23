@@ -13,7 +13,6 @@
       --text-secondary: #666;
       --radius: 12px;
       --shadow: 0 4px 16px rgba(0,0,0,0.1);
-      --transition: 0.4s ease;
     }
     * { box-sizing: border-box; }
     body {
@@ -47,55 +46,59 @@
       border-radius: var(--radius);
       overflow: hidden;
       min-height: 180px;
+      margin-bottom: 16px;
+    }
+    .topic-main,
+    .topic-score {
+      opacity: 0;
     }
     .topic-main {
       font-size: 2.4em;
       font-weight: bold;
-      opacity: 0;
-      transition: opacity var(--transition);
     }
     .topic-score {
       margin-top: 12px;
       font-size: 1.2em;
       color: var(--text-secondary);
-      opacity: 0;
-      transition: opacity var(--transition);
     }
     button {
-      margin: 16px 8px 0;
+      margin: 8px 4px;
       padding: 12px 24px;
       font-size: 1em;
       border: none;
       border-radius: var(--radius);
       cursor: pointer;
-      transition: background var(--transition), transform var(--transition);
+      transition: background 0.4s ease, transform 0.4s ease;
       box-shadow: var(--shadow);
       background: var(--accent);
       color: #fff;
     }
     button:hover { background: #6246ea; transform: translateY(-2px); }
+
     /* アニメーション keyframes */
     @keyframes fadeIn {
       from { opacity: 0; }
-      to { opacity: 1; }
+      to   { opacity: 1; }
     }
     @keyframes zoomIn {
       from { transform: scale(0.7); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
+      to   { transform: scale(1);   opacity: 1; }
     }
     @keyframes slideIn {
       from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+      to   { transform: translateY(0);     opacity: 1; }
     }
     @keyframes bounceIn {
-      0% { transform: scale(0.5); opacity: 0; }
-      60% { transform: scale(1.1); opacity: 1; }
-      100% { transform: scale(1); }
+      0%   { transform: scale(0.5); opacity: 0; }
+      60%  { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1);   opacity: 1; }
     }
-    .fade-in { animation: fadeIn 0.8s ease forwards; }
-    .zoom-in { animation: zoomIn 0.6s ease forwards; }
-    .slide-in { animation: slideIn 0.7s ease forwards; }
-    .bounce-in { animation: bounceIn 0.9s ease forwards; }
+
+    .fade-in     { animation: fadeIn  0.8s ease forwards; }
+    .zoom-in     { animation: zoomIn  0.6s ease forwards; }
+    .slide-in    { animation: slideIn 0.7s ease forwards; }
+    .bounce-in   { animation: bounceIn 0.9s ease forwards; }
+    .score-anim  { animation: fadeIn  0.8s ease forwards; animation-delay: 0.4s; }
   </style>
 </head>
 <body>
@@ -114,45 +117,34 @@
     const animations = ['fade-in', 'zoom-in', 'slide-in', 'bounce-in'];
 
     async function showTopic() {
-      const mainEl = document.getElementById('topicMain');
+      const mainEl  = document.getElementById('topicMain');
       const scoreEl = document.getElementById('topicScore');
-      // アニメーション前のリセット
-      animations.forEach(cls => {
-        mainEl.classList.remove(cls);
-        scoreEl.classList.remove(cls);
-      });
+      // クラス名を初期化
+      mainEl.className  = 'topic-main';
+      scoreEl.className = 'topic-score';
 
       try {
         const res = await fetch(`${BASE_URL}?action=getTopic`);
         if (!res.ok) throw new Error(res.status);
         const { topic, score } = await res.json();
-        // テキスト更新（「点」は不要のため削除）
-        mainEl.textContent = topic;
+        // テキスト更新（「点」は含まれません）
+        mainEl.textContent  = topic;
         scoreEl.textContent = score;
 
         // メインお題にランダムアニメーション
-        const animMain = animations[Math.floor(Math.random() * animations.length)];
-        // リフロー強制
-        void mainEl.offsetWidth;
-        mainEl.classList.add(animMain);
-
-        // スコアを少し遅らせてフェードイン
-        setTimeout(() => {
-          void scoreEl.offsetWidth;
-          scoreEl.classList.add('fade-in');
-        }, 600);
+        const anim = animations[Math.floor(Math.random() * animations.length)];
+        mainEl.classList.add(anim);
+        // スコアは遅延付きフェードイン
+        scoreEl.classList.add('score-anim');
       } catch (err) {
-        mainEl.textContent = 'お題の取得に失敗しました';
+        mainEl.textContent  = 'お題の取得に失敗しました';
         scoreEl.textContent = '';
         console.error(err);
       }
     }
 
     document.getElementById('nextBtn').addEventListener('click', showTopic);
-    document.getElementById('backBtn').addEventListener('click', () => {
-      location.href = 'index.html';
-    });
-    // 初回表示
+    document.getElementById('backBtn').addEventListener('click', () => location.href = 'index.html');
     window.addEventListener('load', showTopic);
   </script>
 </body>

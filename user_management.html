@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>参加ユーザ管理</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #1e1e1e;
+      --accent: #7F5AF0;
+      --border-radius: 8px;
+      --shadow: 0 4px 12px rgba(0,0,0,0.05);
+      --transition: 0.3s ease;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: var(--bg);
+      padding: 30px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+    }
+    h1 {
+      margin-top: 0;
+      color: var(--accent);
+      font-size: 1.8em;
+      text-align: center;
+    }
+    #user-form {
+      display: flex;
+      margin-bottom: 16px;
+    }
+    #user-form input {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: var(--border-radius);
+    }
+    #user-form button {
+      margin-left: 8px;
+      padding: 8px 16px;
+      font-size: 1em;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: transform var(--transition);
+    }
+    #user-form button:hover {
+      transform: scale(1.05);
+    }
+    #user-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #user-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+    }
+    .user-name {
+      font-weight: bold;
+      margin-right: 12px;
+    }
+    .user-score {
+      color: var(--accent);
+    }
+    .actions button {
+      margin-left: 8px;
+      padding: 6px 10px;
+      font-size: 0.9em;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    .del {
+      background: #f66;
+      color: #fff;
+    }
+    .del:hover {
+      background: #e55;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>参加ユーザ管理</h1>
+    <form id="user-form" onsubmit="event.preventDefault(); addUser();">
+      <input id="new-user-name" type="text" placeholder="名前を入力" />
+      <button type="submit">登録</button>
+    </form>
+    <ul id="user-list">
+      <!-- JavaScript で埋め込み -->
+    </ul>
+  </div>
+
+  <script>
+    const BASE_URL = 'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
+
+    // ユーザ一覧を取得して描画
+    async function loadUsers() {
+      const res = await fetch(BASE_URL + '?action=getUsers');
+      const { users } = await res.json();
+      const ul = document.getElementById('user-list');
+      ul.innerHTML = '';
+      users.forEach(u => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <div class="user-info">
+            <span class="user-name">${u.name}</span>
+            <span class="user-score">${u.score} 点</span>
+          </div>
+          <div class="actions">
+            <button class="del" onclick="deleteUser('${u.name}')">削除</button>
+          </div>
+        `;
+        ul.appendChild(li);
+      });
+    }
+
+    // ユーザ登録
+    async function addUser() {
+      const input = document.getElementById('new-user-name');
+      const name = input.value.trim();
+      if (!name) {
+        alert('名前を入力してください');
+        return;
+      }
+      await fetch(BASE_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'register', name })
+      });
+      input.value = '';
+      loadUsers();
+    }
+
+    // ユーザ削除
+    async function deleteUser(name) {
+      if (!confirm(name + ' さんを削除しますか？')) return;
+      await fetch(BASE_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'delete', name })
+      });
+      loadUsers();
+    }
+
+    // ページ読み込み時に実行
+    loadUsers();
+  </script>
+</body>
+</html>

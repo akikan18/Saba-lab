@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>縛りお題ゲーム</title>
+  <style>
+    :root {
+      --main-bg: #fff;
+      --text: #1e1e1e;
+      --accent: #7F5AF0;
+      --bg-output: rgba(127, 90, 240, 0.05);
+      --radius: 8px;
+      --shadow: 0 4px 12px rgba(0,0,0,0.05);
+      --inset: inset 0 0 10px rgba(127,90,240,0.1);
+      --trans: 0.3s ease;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      background: var(--main-bg);
+      color: var(--text);
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .container {
+      width: 95%;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      background: var(--main-bg);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+    }
+    h2 {
+      text-align: center;
+      color: var(--accent);
+      margin-top: 0;
+    }
+    .box-wrapper {
+      position: relative;
+      margin: 40px 0 20px;
+    }
+    .label-box {
+      position: absolute;
+      top: -0.9em;
+      left: 10px;
+      background: var(--accent);
+      color: #fff;
+      padding: 0 .6em;
+      font-weight: bold;
+      border-radius: var(--radius) var(--radius) 0 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    #output {
+      background: var(--bg-output);
+      border: 3px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 20px;
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--inset);
+      text-align: center;
+    }
+    #output .topic { font-size: 2.4em; line-height: 1.2; margin: 0; }
+    #output .score { margin-top: 8px; font-size: 1em; color: var(--accent); opacity: 0; }
+    button.next {
+      display: block;
+      margin: 0 auto 20px;
+      padding: 10px 30px;
+      font-size: 1.1em;
+      background: linear-gradient(135deg, var(--accent), #4C51BF);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(79,48,181,0.3);
+      transition: transform var(--trans);
+    }
+    button.next:hover { transform: scale(1.05); }
+    #user-list { list-style: none; padding: 0; margin: 0; }
+    #user-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .user-name { font-weight: bold; margin-right: 12px; }
+    .user-score { color: var(--accent); }
+    .actions button {
+      margin-left: 8px;
+      padding: 6px 12px;
+      font-size: 0.9em;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background var(--trans), transform var(--trans);
+    }
+    .achieve { background: #4caf50; color: #fff; }
+    .achieve:hover { background: #45a049; transform: scale(1.05); }
+    .fail    { background: #ccc; }
+    .fail:hover { background: #bbb; transform: scale(1.05); }
+
+    /* アニメーション */
+    .zoom-in   { animation: zoomIn 1.2s ease forwards; }
+    .bounce-in { animation: bounceIn 1.5s ease forwards; }
+    .fade-in   { animation: fadeIn 0.8s ease forwards; }
+    @keyframes zoomIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.1); opacity: 1; } 70% { transform: scale(0.9); } 100% { transform: scale(1); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>お題チャレンジ</h2>
+    <div class="box-wrapper">
+      <div class="label-box">＊お題</div>
+      <div id="output">
+        <span class="topic"></span>
+        <span class="score"></span>
+      </div>
+    </div>
+    <button class="next" onclick="nextTopic()">新しいお題！</button>
+    <ul id="user-list"></ul>
+  </div>
+  <script>
+    const BASE_URL = 'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
+
+    // 初期ロード
+    document.addEventListener('DOMContentLoaded', () => {
+      loadUsers();
+    });
+
+    // ユーザ一覧取得＆描画
+    async function loadUsers() {
+      const res = await fetch(`${BASE_URL}?action=getUsers`);
+      const { users } = await res.json();
+      const ul = document.getElementById('user-list');
+      ul.innerHTML = '';
+      users.forEach(u => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <div>
+            <span class="user-name">${u.name}</span>
+            <span class="user-score">${u.score} 点</span>
+          </div>
+          <div class="actions">
+            <button class="achieve" onclick="onComplete('${u.name}')">達成</button>
+            <button class="fail" onclick="onFail()">未達成</button>
+          </div>`;
+        ul.appendChild(li);
+      });
+    }
+
+    // 達成ボタン
+    async function onComplete(name) {
+      // Content-Type ヘッダを指定しないことでプリフライトを回避
+      const res = await fetch(BASE_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'complete', name })
+      });
+      if (res.ok) loadUsers();
+      else console.error('POST complete failed', res.status);
+    }
+    function onFail() {}
+
+    // お題取得＆表示
+    async function nextTopic() {
+      const res = await fetch(`${BASE_URL}?action=getTopic`);
+      if (!res.ok) { console.error('GET topic failed', res.status); return; }
+      const data = await res.json();
+      const top = document.querySelector('#output .topic');
+      const sc  = document.querySelector('#output .score');
+      top.className = 'topic'; sc.className = 'score';
+      top.innerText = data.topic;
+      setTimeout(() => top.classList.add(['zoom-in','bounce-in'][Math.floor(Math.random()*2)]), 10);
+      setTimeout(() => {
+        sc.innerText = data.score;
+        sc.classList.add('fade-in');
+      }, 800);
+    }
+  </script>
+</body>
+</html>

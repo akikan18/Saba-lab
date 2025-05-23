@@ -18,7 +18,228 @@
       cursor: pointer;
     }
     #assign-list { list-style: none; padding: 0; max-width: 600px; margin: 0 auto; }
-    #assign-list li {
+    #ass<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>お題ゲーム</title>
+  <style>
+    :root {
+      --bg: #f9f9f9;
+      --accent: #7F5AF0;
+      --accent-light: rgba(127,90,240,0.1);
+      --text-main: #333;
+      --text-secondary: #666;
+      --radius: 12px;
+      --shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      text-align: center;
+    }
+    h1 {
+      margin: 0 0 16px;
+      color: var(--accent);
+      font-size: 2em;
+    }
+    .notice {
+      margin-bottom: 20px;
+      color: var(--text-secondary);
+      font-size: 1.1em;
+    }
+    .btn {
+      margin: 8px 4px;
+      padding: 10px 24px;
+      font-size: 1em;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      box-shadow: var(--shadow);
+      transition: transform 0.3s ease, background 0.3s ease;
+    }
+    .btn:hover { transform: translateY(-2px); background: #6246ea; }
+    .btn.secondary { background: #999; }
+    .btn.secondary:hover { background: #777; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill,minmax(240px,1fr));
+      gap: 16px;
+      margin: 16px 0;
+    }
+    .card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      text-align: left;
+      position: relative;
+      transition: background 0.3s ease;
+    }
+    .card.completed {
+      background: var(--accent-light);
+    }
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 1.2em;
+      color: var(--accent);
+    }
+    .card p {
+      margin: 4px 0;
+      font-size: 1em;
+    }
+    .card small {
+      color: var(--text-secondary);
+    }
+    .card .actions {
+      margin-top: 12px;
+      text-align: right;
+    }
+    .card .actions button {
+      margin-left: 8px;
+      padding: 6px 12px;
+      font-size: 0.9em;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+    .achieve { background: #4caf50; color: #fff; }
+    .fail    { background: #ccc; color: #333; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>お題ゲーム</h1>
+    <div id="preStart">
+      <p class="notice">ゲームを開始する前にメンバー管理から参加メンバーを追加してください</p>
+      <button id="startBtn" class="btn">ゲーム開始</button>
+      <button id="backBtn" class="btn secondary">メインメニューに戻る</button>
+    </div>
+    <div id="gameArea" style="display:none;">
+      <div id="cardsContainer" class="cards"></div>
+      <button id="endBtn" class="btn" style="display:none;">ゲーム終了</button>
+    </div>
+    <div id="resultArea" style="display:none;">
+      <h2>結果発表</h2>
+      <div id="resultContainer" class="cards"></div>
+      <button id="menuBtn" class="btn">メインメニューに戻る</button>
+    </div>
+  </div>
+
+  <script>
+    const BASE_URL = 'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
+    let users = [];
+    let assignments = [];
+
+    async function startGame() {
+      // 1) 参加ユーザ取得
+      const resU = await fetch(`${BASE_URL}?action=getUsers`);
+      const dataU = await resU.json();
+      users = dataU.users.map(u => u.name);
+      if (!users.length) {
+        alert('参加ユーザがいません');
+        return;
+      }
+
+      document.getElementById('preStart').style.display = 'none';
+      document.getElementById('gameArea').style.display = 'block';
+
+      await nextRound();
+    }
+
+    async function nextRound() {
+      assignments = await Promise.all(
+        users.map(async (name, i) => {
+          const resT = await fetch(`${BASE_URL}?action=getTopic`);
+          const { topic, score } = await resT.json();
+          return { name, topic, score, done: false };
+        })
+      );
+      renderCards();
+    }
+
+    function renderCards() {
+      const container = document.getElementById('cardsContainer');
+      container.innerHTML = '';
+      assignments.forEach((a, i) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.index = i;
+        card.innerHTML = `
+          <h3>${a.name}</h3>
+          <p>${a.topic}</p>
+          <small>${a.score}</small>
+          <div class="actions">
+            <button class="achieve" ${a.done? 'disabled':''} onclick="onResult(${i}, true)">達成</button>
+            <button class="fail"    ${a.done? 'disabled':''} onclick="onResult(${i}, false)">未達成</button>
+          </div>`;
+        container.appendChild(card);
+      });
+    }
+
+    async function onResult(index, achieved) {
+      const card = document.querySelector(`.card[data-index='${index}']`);
+      assignments[index].done = true;
+      // ハイライト
+      card.classList.add('completed');
+      // スコア加算
+      if (achieved) {
+        await fetch(BASE_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'complete', name: assignments[index].name })
+        });
+      }
+      // ボタン無効化
+      card.querySelectorAll('button').forEach(btn => btn.disabled = true);
+
+      // 全員完了したら終了ボタン表示
+      if (assignments.every(a => a.done)) {
+        document.getElementById('endBtn').style.display = 'inline-block';
+      }
+    }
+
+    async function endGame() {
+      document.getElementById('gameArea').style.display = 'none';
+      document.getElementById('resultArea').style.display = 'block';
+      // 結果取得
+      const res = await fetch(`${BASE_URL}?action=getUsers`);
+      const { users: finalUsers } = await res.json();
+      const resultContainer = document.getElementById('resultContainer');
+      resultContainer.innerHTML = '';
+      finalUsers.forEach(u => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<h3>${u.name}</h3><p>最終スコア: ${u.score}</p>`;
+        resultContainer.appendChild(card);
+      });
+    }
+
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('endBtn').addEventListener('click', endGame);
+    document.getElementById('backBtn').addEventListener('click', () => location.href = 'index.html');
+    document.getElementById('menuBtn').addEventListener('click', () => location.href = 'index.html');
+  </script>
+</body>
+</html>
+ign-list li {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -45,7 +266,7 @@
   </div>
 
   <script>
-    const BASE_URL = 'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
+    const BASE_URL = 'https://script.google.com/macros/s/＜あなたのID＞/exec';
     let users = [];
     let assignments = [];
 

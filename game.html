@@ -21,48 +21,49 @@
       background: var(--bg);
       color: var(--text-main);
       width: 100vw; height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      display: flex; align-items: center; justify-content: center;
       overflow: hidden;
     }
     .container {
       position: relative;
       width: 100%; height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
       background: #fff;
     }
     h1 {
       margin: 0;
       color: var(--accent);
       font-size: 2.4em;
-      transition: transform 0.8s ease;
+      transition: transform 0.8s ease, opacity 0.4s ease;
     }
-    /* 中央に配置 */
+    /* 初期：縦横中央 */
     .container.initial h1,
-    .container.initial #preStart {
-      transform: translateY(0);
-    }
-    .container.initial #preStart {
+    .container.initial .controls {
       opacity: 1;
-      transition: opacity 0.4s ease;
+      transform: none;
+      transition: none;
     }
-    /* 上部へ移動 */
+    /* 開始：上部へ移動＆フェードアウト */
     .container.starting h1 {
       transform: translateY(-calc(50vh - 80px));
+      opacity: 1;
     }
-    .container.starting #preStart {
+    .container.starting .controls {
       opacity: 0;
       transition: opacity 0.4s ease;
     }
+    .controls {
+      margin-top: 24px;
+      display: flex; gap: 16px;
+      opacity: 1;
+      transition: opacity 0.4s ease;
+    }
     .notice {
-      margin: 24px 0;
+      margin: 16px 0;
       color: var(--text-secondary);
     }
     .btn {
-      margin: 8px;
       padding: 12px 28px;
       font-size: 1em;
       border: none;
@@ -76,6 +77,7 @@
     .btn:hover { transform: translateY(-2px); }
     .btn.secondary { background: #999; }
     .btn.secondary:hover { background: #777; }
+
     /* Spinner */
     .spinner {
       border: 4px solid var(--accent-light);
@@ -86,13 +88,13 @@
       margin: 40px auto;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
     /* Cards */
     .cards {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(240px,1fr));
       gap: 24px;
-      width: 100%;
-      padding: 0 16px;
+      width: 100%; padding: 0 16px;
       margin-top: 32px;
     }
     .card {
@@ -112,34 +114,36 @@
     .achieve { background: #4caf50; color: #fff; }
     .fail { background: #ccc; color: #333; }
     @keyframes slideFadeIn { to { opacity: 1; transform: translateY(0); } }
+
     /* Results */
     #resultArea {
-      position: absolute;
-      top: 0; left: 0;
+      position: absolute; top: 0; left: 0;
       width: 100%; height: 100%;
       background: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
       padding-top: 80px;
+      overflow-y: auto;
     }
-    #resultArea h2 { opacity: 0; animation: slideFadeIn .6s forwards .4s; }
+    #resultArea h2 {
+      opacity: 0;
+      animation: slideFadeIn .6s forwards .4s;
+    }
     .result-top {
-      display: flex;
-      gap: 24px;
-      margin: 24px 0;
+      display: flex; gap: 24px; margin: 24px 0;
     }
     .top-card {
       opacity: 0;
       transform: translateY(30px);
       animation: slideFadeIn .6s forwards;
     }
+    .result-list {
+      list-style: none; padding: 0; margin: 16px 0;
+      width: 100%; max-width: 400px;
+    }
     .result-list li {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 12px;
-      border-bottom: 1px solid #eee;
+      display: flex; justify-content: space-between;
+      padding: 8px 12px; border-bottom: 1px solid #eee;
       opacity: 0;
       animation: slideFadeIn .6s forwards;
     }
@@ -148,18 +152,18 @@
 <body>
   <div class="container initial" id="container">
     <h1 id="title">お題ゲーム</h1>
-
-    <div id="preStart">
-      <p class="notice">ゲームを開始する前にメンバー管理から参加メンバーを追加してください</p>
+    <div id="preStart" class="controls">
       <button id="startBtn" class="btn">ゲーム開始</button>
       <button id="backBtn" class="btn secondary">メインメニューに戻る</button>
     </div>
 
-    <div id="gameArea" style="display:none; flex-direction:column; align-items:center;">
+    <div id="gameArea" style="display:none; width:100%; text-align:center;">
       <div id="spinner" class="spinner" style="display:none;"></div>
       <div id="cardsContainer" class="cards"></div>
-      <button id="nextRoundBtn" class="btn" style="display:none;">次のラウンド</button>
-      <button id="endBtn" class="btn secondary" style="display:none;">ゲーム終了</button>
+      <div id="postControls" class="controls" style="display:none;">
+        <button id="nextRoundBtn" class="btn">次のラウンド</button>
+        <button id="endBtn" class="btn secondary">ゲーム終了</button>
+      </div>
     </div>
 
     <div id="resultArea" style="display:none;">
@@ -171,106 +175,90 @@
   </div>
 
   <script>
-    const BASE_URL = 'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
+    const BASE_URL = 'https://script.google.com/macros/s/.../exec';
     let users = [];
-    const container = document.getElementById('container');
-    const preStart  = document.getElementById('preStart');
-    const gameArea  = document.getElementById('gameArea');
-    const spinner   = document.getElementById('spinner');
+    const container     = document.getElementById('container');
+    const preControls   = document.getElementById('preStart');
+    const gameArea      = document.getElementById('gameArea');
+    const spinner       = document.getElementById('spinner');
+    const postControls  = document.getElementById('postControls');
 
-    document.getElementById('startBtn').onclick = async () => {
-      // 即座にボタンを消してスピナー
-      preStart.style.display = 'none';
-      spinner.style.display  = 'block';
-      container.classList.remove('initial');
-      container.classList.add('starting');
-      await startGame();
+    document.getElementById('startBtn').onclick = () => {
+      // 消えるアニメ
+      preControls.style.opacity = '0';
+      setTimeout(() => preControls.style.display = 'none', 400);
+      // タイトル移動
+      container.classList.replace('initial','starting');
+      // 直後にスピナー
+      spinner.style.display = 'block';
+      startGame();
     };
+    document.getElementById('backBtn').onclick = () => location.href='index.html';
     document.getElementById('nextRoundBtn').onclick = () => {
-      document.getElementById('nextRoundBtn').style.display = 'none';
-      document.getElementById('endBtn').style.display       = 'none';
-      document.getElementById('cardsContainer').innerHTML   = '';
-      document.getElementById('cardsContainer').style.display = 'none';
+      postControls.style.opacity = '0';
+      setTimeout(() => postControls.style.display='none', 400);
+      document.getElementById('cardsContainer').innerHTML = '';
       spinner.style.display = 'block';
       nextRound();
     };
+    document.getElementById('endBtn').onclick = () => {
+      if(confirm('ゲームを終了してよろしいですか？')) endGame();
+    };
 
     async function startGame() {
-      await fetch(BASE_URL, {
-        method:'POST',
-        body: JSON.stringify({ action:'reset' })
-      });
+      await fetch(BASE_URL, { method:'POST', body: JSON.stringify({action:'reset'}) });
       const resU = await fetch(`${BASE_URL}?action=getUsers`);
-      const { users: u } = await resU.json();
-      users = u.map(x=>x.name);
-      if (!users.length) return alert('参加ユーザがいません');
-      gameArea.style.display = 'flex';
-      await nextRound();
+      const {users:u} = await resU.json(); users = u.map(x=>x.name);
+      if(!users.length) return alert('参加ユーザがいません');
+      gameArea.style.display = 'block';
+      nextRound();
     }
 
     async function nextRound() {
       const res = await fetch(`${BASE_URL}?action=getTopics&count=${users.length}`);
-      const { topics } = await res.json();
-      spinner.style.display  = 'none';
-      const cont = document.getElementById('cardsContainer');
-      cont.style.display = 'grid';
-      topics.forEach((t,i) => {
+      const {topics} = await res.json();
+      spinner.style.display = 'none';
+      const cont = document.getElementById('cardsContainer'); cont.style.display='grid';
+      topics.forEach((t,i)=>{
         const card = document.createElement('div');
-        card.className = 'card';
+        card.className='card';
         card.style.animationDelay = `${i*0.6}s`;
         card.dataset.idx = i;
-        card.innerHTML = `<h3>${users[i]}</h3><p>${t.topic}</p><div class="actions"><button class="achieve" onclick="onResult(${i},true)">達成</button><button class="fail" onclick="onResult(${i},false)">未達成</button></div>`;
+        card.innerHTML = `<h3>${users[i]}</h3><p>${t.topic}</p><div class='actions'><button class='achieve' onclick='onResult(${i},true)'>達成</button><button class='fail' onclick='onResult(${i},false)'>未達成</button></div>`;
         cont.appendChild(card);
       });
     }
-
     async function onResult(idx,ok) {
       const card = document.querySelector(`.card[data-idx='${idx}']`);
       card.classList.add('completed');
       card.querySelectorAll('button').forEach(b=>b.disabled=true);
-      if (ok) {
-        await fetch(BASE_URL,{method:'POST',body:JSON.stringify({action:'complete',name:users[idx]})});
-      }
+      if(ok) await fetch(BASE_URL,{method:'POST',body:JSON.stringify({action:'complete',name:users[idx]})});
       const done = [...document.querySelectorAll('.card')].every(c=>c.querySelector('button').disabled);
-      if (done) {
-        ['nextRoundBtn','endBtn'].forEach((id,i)=>{
-          const el = document.getElementById(id);
-          el.style.display='inline-block';
-          el.style.animation='slideFadeIn .6s forwards';
-          el.style.animationDelay=`${1.2 + i*0.6}s`;
-        });
+      if(done) {
+        postControls.style.display='flex';
+        setTimeout(()=>postControls.style.opacity='1',100);
       }
     }
-
     async function endGame() {
-      gameArea.style.display = 'none';
-      const resultArea = document.getElementById('resultArea');
-      resultArea.style.display = 'flex';
+      gameArea.style.display='none';
+      const resA = document.getElementById('resultArea'); resA.style.display='flex';
       const res = await fetch(`${BASE_URL}?action=getUsers`);
-      const { users: fu } = await res.json();
-      fu.sort((a,b)=>b.score - a.score);
-      // 3rd,2nd,1st
-      const topC = document.getElementById('topContainer'); topC.innerHTML = '';
+      const {users:fu} = await res.json(); fu.sort((a,b)=>b.score-a.score);
+      const topC = document.getElementById('topContainer'); topC.innerHTML='';
       [2,1,0].forEach((pos,i)=>{
-        const u = fu[pos];
-        const c = document.createElement('div');
-        c.className = 'card top-card';
-        c.style.animationDelay = `${0.5 + i*0.8}s`;
-        c.innerHTML = `<h3>#${pos+1} ${u.name}</h3><p>最終スコア: ${u.score}</p>`;
+        const u=fu[pos],c=document.createElement('div');
+        c.className='card top-card';c.style.animationDelay=`${0.5+i*0.8}s`;
+        c.innerHTML=`<h3>#${pos+1} ${u.name}</h3><p>最終スコア: ${u.score}</p>`;
         topC.appendChild(c);
       });
-      // 4th+ list
-      const listC = document.getElementById('listContainer'); listC.innerHTML='';
+      const listC=document.getElementById('listContainer');listC.innerHTML='';
       fu.slice(3).forEach((u,i)=>{
-        const li = document.createElement('li');
-        li.style.animationDelay = `${3 + i*0.5}s`;
-        li.innerHTML = `<span>${i+4}. ${u.name}</span><span>${u.score}</span>`;
+        const li=document.createElement('li');li.style.animationDelay=`${3+i*0.5}s`;
+        li.innerHTML=`<span>${i+4}. ${u.name}</span><span>${u.score}</span>`;
         listC.appendChild(li);
       });
-      // show menu
       const menuBtn = document.getElementById('menuBtn');
-      menuBtn.style.animation='slideFadeIn .6s forwards';
-      menuBtn.style.animationDelay='4s';
+      menuBtn.style.opacity='1';
     }
   </script>
 </body>

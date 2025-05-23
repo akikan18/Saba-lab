@@ -30,11 +30,8 @@
       padding: 24px; text-align: center;
     }
     h1 { margin: 0 0 16px; color: var(--accent); font-size: 2em; }
-
     .notice { margin-bottom: 20px; color: var(--text-secondary); font-size: 1.1em; }
-
-    .btn {
-      margin: 8px 4px; padding: 10px 24px; font-size: 1em;
+    .btn { margin: 8px 4px; padding: 10px 24px; font-size: 1em;
       border: none; border-radius: var(--radius);
       cursor: pointer; background: var(--accent); color: #fff;
       box-shadow: var(--shadow);
@@ -43,7 +40,6 @@
     .btn:hover { transform: translateY(-2px); background: #6246ea; }
     .btn.secondary { background: #999; }
     .btn.secondary:hover { background: #777; }
-
     .cards { display: grid; grid-template-columns: repeat(auto-fill,minmax(240px,1fr)); gap: 16px; margin: 16px 0; }
     .card {
       background: #fff; border-radius: var(--radius);
@@ -59,14 +55,11 @@
     .card .actions button { margin-left: 8px; padding: 6px 12px; font-size: 0.9em; border-radius: var(--radius); cursor: pointer; border: none; }
     .achieve { background: #4caf50; color: #fff; }
     .fail    { background: #ccc; color: #333; }
-
-    /* 結果画面 */
     #resultArea h2 { color: var(--accent); margin-bottom: 16px; }
     .result-top { display: grid; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); gap: 16px; margin-bottom: 16px; }
     .top-card { background: #fff; border: 2px solid var(--accent); }
     .result-list { list-style: none; padding: 0; margin: 0; text-align: left; }
     .result-list li { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #eee; }
-
   </style>
 </head>
 <body>
@@ -92,7 +85,7 @@
 
   <script>
     const BASE_URL = 'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
-    let users = [], assignments = [];
+    let users = [], assignments = [], usedTopics = [];
 
     document.getElementById('startBtn').onclick = startGame;
     document.getElementById('nextRoundBtn').onclick = nextRound;
@@ -102,24 +95,40 @@
     document.getElementById('backBtn').onclick = () => location.href='index.html';
     document.getElementById('menuBtn').onclick = () => location.href='index.html';
 
+    // 全ユーザのスコアをリセット
+    async function resetScores() {
+      await fetch(BASE_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'reset' })
+      });
+    }
+
     async function startGame() {
+      // スコア初期化
+      await resetScores();
+      usedTopics = [];
+
       const resU = await fetch(`${BASE_URL}?action=getUsers`);
       const dataU = await resU.json();
       users = dataU.users.map(u=>u.name);
       if (!users.length) return alert('参加ユーザがいません');
+
       document.getElementById('preStart').style.display = 'none';
       document.getElementById('gameArea').style.display = 'block';
       await nextRound();
     }
 
     async function nextRound() {
-      // リセット
       document.getElementById('nextRoundBtn').style.display = 'none';
       document.getElementById('endBtn').style.display = 'none';
       assignments = await Promise.all(users.map(async name=>{
-        const res = await fetch(`${BASE_URL}?action=getTopic`);
-        const {topic, score} = await res.json();
-        return {name, topic, score, done:false};
+        let topicObj;
+        do {
+          const res = await fetch(`${BASE_URL}?action=getTopic`);
+          topicObj = await res.json();
+        } while (usedTopics.includes(topicObj.topic));
+        usedTopics.push(topicObj.topic);
+        return { name, topic: topicObj.topic, score: topicObj.score, done:false };
       }));
       renderCards();
     }
@@ -128,7 +137,10 @@
       const cont = document.getElementById('cardsContainer'); cont.innerHTML='';
       assignments.forEach((a,i)=>{
         const card = document.createElement('div'); card.className='card'; card.dataset.idx=i;
-        card.innerHTML = `<h3>${a.name}</h3><p>${a.topic}</p><small>${a.score}</small>
+        card.innerHTML = `
+          <h3>${a.name}</h3>
+          <p>${a.topic}</p>
+          <small>${a.score}</small>
           <div class="actions">
             <button class="achieve"${a.done?' disabled':''} onclick="onResult(${i},true)">達成</button>
             <button class="fail"${a.done?' disabled':''} onclick="onResult(${i},false)">未達成</button>
@@ -153,16 +165,13 @@
       document.getElementById('resultArea').style.display='block';
       const res = await fetch(`${BASE_URL}?action=getUsers`);
       const {users:fu} = await res.json();
-      // スコア降順ソート
       fu.sort((a,b)=>b.score - a.score);
-      // 上位3位カード
       const topC = document.getElementById('topContainer'); topC.innerHTML='';
       fu.slice(0,3).forEach((u,i)=>{
         const c = document.createElement('div'); c.className='card top-card';
-        c.innerHTML = `<h3>#{${i+1}} ${u.name}</h3><p>最終スコア: ${u.score}</p>`;
+        c.innerHTML = `<h3>#${i+1} ${u.name}</h3><p>最終スコア: ${u.score}</p>`;
         topC.appendChild(c);
       });
-      // 4位以下リスト
       const listC = document.getElementById('listContainer'); listC.innerHTML='';
       fu.slice(3).forEach((u,i)=>{
         const li = document.createElement('li');

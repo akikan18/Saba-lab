@@ -30,18 +30,29 @@
 <body>
   <h1>お題だけ連続表示</h1>
   <div class="topic-box" id="topic">ロード中…</div>
-  <button onclick="nextTopic()">次のお題を見る</button>
+  <button id="next-btn">次のお題を見る</button>
 
   <script>
-    const BASE_URL = 'https://script.google.com/macros/s/＜あなたのID＞/exec';
-
-    document.addEventListener('DOMContentLoaded', nextTopic);
+    // ★必ずあなたの「デプロイ済みWebアプリの exec URL」をコピペしてください
+    const BASE_URL = 'https://script.google.com/macros/s/AKfycb×××/exec';
 
     async function nextTopic() {
-      const res = await fetch(`${BASE_URL}?action=getTopic`);
-      const { topic, score } = await res.json();
-      document.getElementById('topic').innerText = `${topic}（${score}点）`;
+      try {
+        const res = await fetch(`${BASE_URL}?action=getTopic`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const { topic, score } = await res.json();
+        document.getElementById('topic').innerText = `${topic}（${score}点）`;
+      } catch (err) {
+        console.error(err);
+        document.getElementById('topic').innerText = 'お題の取得に失敗しました';
+      }
     }
+
+    // ページ読み込み時に即実行
+    nextTopic();
+
+    // ボタン押下でも実行
+    document.getElementById('next-btn').addEventListener('click', nextTopic);
   </script>
 </body>
 </html>

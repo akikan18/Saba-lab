@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>参加ユーザ管理</title>
   <style>
     :root {
@@ -19,20 +20,23 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: var(--bg);
       color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     .container {
+      width: 100%;
       max-width: 600px;
-      margin: 0 auto;
       background: var(--bg);
       padding: 30px;
       border-radius: var(--border-radius);
       box-shadow: var(--shadow);
+      text-align: center;
     }
     h1 {
       margin-top: 0;
       color: var(--accent);
       font-size: 1.8em;
-      text-align: center;
     }
     #user-form {
       display: flex;
@@ -77,10 +81,6 @@
     }
     .user-name {
       font-weight: bold;
-      margin-right: 12px;
-    }
-    .user-score {
-      color: var(--accent);
     }
     .actions button {
       margin-left: 8px;
@@ -98,6 +98,23 @@
     .del:hover {
       background: #e55;
     }
+    /* メインメニューに戻るボタン */
+    #backBtn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: background var(--transition), transform var(--transition);
+      box-shadow: var(--shadow);
+    }
+    #backBtn:hover {
+      background: #6246ea;
+      transform: translateY(-2px);
+    }
   </style>
 </head>
 <body>
@@ -110,14 +127,15 @@
     <ul id="user-list">
       <!-- JavaScript で埋め込み -->
     </ul>
+    <button id="backBtn">メインメニューに戻る</button>
   </div>
 
   <script>
     const BASE_URL = 'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
 
-    // ユーザ一覧を取得して描画
+    // ユーザ一覧取得して描画
     async function loadUsers() {
-      const res = await fetch(BASE_URL + '?action=getUsers');
+      const res = await fetch(`${BASE_URL}?action=getUsers`);
       const { users } = await res.json();
       const ul = document.getElementById('user-list');
       ul.innerHTML = '';
@@ -126,12 +144,10 @@
         li.innerHTML = `
           <div class="user-info">
             <span class="user-name">${u.name}</span>
-            <span class="user-score">${u.score} 点</span>
           </div>
           <div class="actions">
             <button class="del" onclick="deleteUser('${u.name}')">削除</button>
-          </div>
-        `;
+          </div>`;
         ul.appendChild(li);
       });
     }
@@ -161,6 +177,11 @@
       });
       loadUsers();
     }
+
+    // メインメニューに戻る
+    document.getElementById('backBtn').addEventListener('click', () => {
+      location.href = 'index.html';
+    });
 
     // ページ読み込み時に実行
     loadUsers();

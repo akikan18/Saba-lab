@@ -1,8 +1,10 @@
+<!-- game.html -->
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>お題ゲーム</title>
   <style>
     :root {
@@ -57,7 +59,7 @@
     .fail    { background: #ccc; color: #333; }
     #resultArea h2 { color: var(--accent); margin-bottom: 16px; }
     .result-top { display: grid; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); gap: 16px; margin-bottom: 16px; }
-    .top-card { background: #fff; border: 2px solid var(--accent); }
+    .top-card { background: #fff; border: 2px solid var(--accent); padding:16px; }
     .result-list { list-style: none; padding: 0; margin: 0; text-align: left; }
     .result-list li { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #eee; }
   </style>
@@ -65,16 +67,24 @@
 <body>
   <div class="container">
     <h1>お題ゲーム</h1>
+
+    <!-- ゲーム開始前 -->
     <div id="preStart">
-      <p class="notice">ゲームを開始する前にメンバー管理から参加メンバーを追加してください</p>
+      <p class="notice">
+        ゲームを開始する前にメンバー管理から参加メンバーを追加してください
+      </p>
       <button id="startBtn" class="btn">ゲーム開始</button>
       <button id="backBtn" class="btn secondary">メインメニューに戻る</button>
     </div>
+
+    <!-- ゲーム中 -->
     <div id="gameArea" style="display:none;">
       <div id="cardsContainer" class="cards"></div>
       <button id="nextRoundBtn" class="btn" style="display:none;">次のラウンド</button>
       <button id="endBtn" class="btn secondary" style="display:none;">ゲーム終了</button>
     </div>
+
+    <!-- 結果画面 -->
     <div id="resultArea" style="display:none;">
       <h2>結果発表</h2>
       <div id="topContainer" class="result-top"></div>
@@ -85,98 +95,115 @@
 
   <script>
     const BASE_URL = 'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
-    let users = [], assignments = [], usedTopics = [];
+    let users = [], usedTopics = [];
 
-    document.getElementById('startBtn').onclick = startGame;
+    document.getElementById('startBtn').onclick    = startGame;
     document.getElementById('nextRoundBtn').onclick = nextRound;
     document.getElementById('endBtn').onclick = () => {
       if (confirm('ゲームを終了してよろしいですか？')) endGame();
     };
-    document.getElementById('backBtn').onclick = () => location.href='index.html';
-    document.getElementById('menuBtn').onclick = () => location.href='index.html';
+    document.getElementById('backBtn').onclick  = () => location.href='index.html';
+    document.getElementById('menuBtn').onclick  = () => location.href='index.html';
 
     // 全ユーザのスコアをリセット
     async function resetScores() {
-      await fetch(BASE_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'reset' })
+      const res = await fetch(BASE_URL, {
+        method:'POST',
+        body: JSON.stringify({ action:'reset' })
       });
+      await res.json();
     }
 
     async function startGame() {
-      // スコア初期化
       await resetScores();
       usedTopics = [];
 
       const resU = await fetch(`${BASE_URL}?action=getUsers`);
-      const dataU = await resU.json();
-      users = dataU.users.map(u=>u.name);
+      const { users: userObjs } = await resU.json();
+      users = userObjs.map(u=>u.name);
       if (!users.length) return alert('参加ユーザがいません');
 
-      document.getElementById('preStart').style.display = 'none';
-      document.getElementById('gameArea').style.display = 'block';
+      document.getElementById('preStart').style.display  = 'none';
+      document.getElementById('gameArea').style.display  = 'block';
       await nextRound();
     }
 
     async function nextRound() {
-      async function nextRound() {
-        document.getElementById('nextRoundBtn').style.display = 'none';
-        document.getElementById('endBtn').style.display     = 'none';
-        // 一括で topics を取得
-        const res = await fetch(`${BASE_URL}?action=getTopics&count=${users.length}`);
-        const { topics } = await res.json();
-        // users の配列に合わせて assignments を構築
-        assignments = users.map((name, i) => ({
-            name,
-            topic: topics[i].topic,
-            score: topics[i].score,
-            done: false
-        }));
-        renderCards();
-        }
+      document.getElementById('nextRoundBtn').style.display = 'none';
+      document.getElementById('endBtn').style.display      = 'none';
+
+      // 一気に N 件取得
+      const res = await fetch(
+        `${BASE_URL}?action=getTopics&count=${users.length}`
+      );
+      const { topics } = await res.json();
+
+      // カードをレンダリング
+      renderCards(topics);
     }
 
-    function renderCards() {
-      const cont = document.getElementById('cardsContainer'); cont.innerHTML='';
-      assignments.forEach((a,i)=>{
-        const card = document.createElement('div'); card.className='card'; card.dataset.idx=i;
-        card.innerHTML = `
-          <h3>${a.name}</h3>
-          <p>${a.topic}</p>
-          <small>${a.score}</small>
+    function renderCards(topics) {
+      const cont = document.getElementById('cardsContainer');
+      cont.innerHTML = '';
+      topics.forEach((t, i) => {
+        const card = document.createElement('div');
+        card.className    = 'card';
+        card.dataset.idx  = i;
+        card.innerHTML    = `
+          <h3>${users[i]}</h3>
+          <p>${t.topic}</p>
+          <small>${t.score}</small>
           <div class="actions">
-            <button class="achieve"${a.done?' disabled':''} onclick="onResult(${i},true)">達成</button>
-            <button class="fail"${a.done?' disabled':''} onclick="onResult(${i},false)">未達成</button>
+            <button class="achieve" onclick="onResult(${i}, true)">達成</button>
+            <button class="fail"    onclick="onResult(${i}, false)">未達成</button>
           </div>`;
         cont.appendChild(card);
       });
     }
 
-    async function onResult(idx,ok) {
+    async function onResult(idx, ok) {
       const card = document.querySelector(`.card[data-idx='${idx}']`);
-      assignments[idx].done = true; card.classList.add('completed');
-      if (ok) await fetch(BASE_URL, {method:'POST',body:JSON.stringify({action:'complete',name:assignments[idx].name})});
-      card.querySelectorAll('button').forEach(b=>b.disabled=true);
-      if (assignments.every(a=>a.done)) {
-        document.getElementById('nextRoundBtn').style.display='inline-block';
-        document.getElementById('endBtn').style.display='inline-block';
+      card.classList.add('completed');
+      if (ok) {
+        await fetch(BASE_URL, {
+          method:'POST',
+          body: JSON.stringify({
+            action:'complete',
+            name: users[idx]
+          })
+        });
+      }
+      card.querySelectorAll('button').forEach(b => b.disabled = true);
+
+      const allDone = [...document.querySelectorAll('.card')]
+        .every(c => c.querySelector('button').disabled);
+      if (allDone) {
+        document.getElementById('nextRoundBtn').style.display = 'inline-block';
+        document.getElementById('endBtn').style.display       = 'inline-block';
       }
     }
 
     async function endGame() {
-      document.getElementById('gameArea').style.display='none';
-      document.getElementById('resultArea').style.display='block';
+      document.getElementById('gameArea').style.display   = 'none';
+      document.getElementById('resultArea').style.display = 'block';
       const res = await fetch(`${BASE_URL}?action=getUsers`);
-      const {users:fu} = await res.json();
+      const { users: fu } = await res.json();
       fu.sort((a,b)=>b.score - a.score);
-      const topC = document.getElementById('topContainer'); topC.innerHTML='';
-      fu.slice(0,3).forEach((u,i)=>{
-        const c = document.createElement('div'); c.className='card top-card';
+
+      // 上位3位
+      const topC = document.getElementById('topContainer');
+      topC.innerHTML = '';
+      fu.slice(0,3).forEach((u,i) => {
+        const c = document.createElement('div');
+        c.className = 'card top-card';
         c.innerHTML = `<h3>#${i+1} ${u.name}</h3><p>最終スコア: ${u.score}</p>`;
         topC.appendChild(c);
       });
-      const listC = document.getElementById('listContainer'); listC.innerHTML='';
-      fu.slice(3).forEach((u,i)=>{
+
+      // 4位以下リスト
+      const listC = document.getElementById('listContainer');
+      listC.innerHTML = '';
+      fu.slice(3).forEach((u,i) => {
         const li = document.createElement('li');
         li.innerHTML = `<span>${i+4}. ${u.name}</span><span>${u.score}</span>`;
         listC.appendChild(li);

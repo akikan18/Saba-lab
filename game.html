@@ -33,7 +33,7 @@
       flex-direction: column;
       align-items: center;
       background: #fff;
-      transition: padding-top .6s ease, justify-content .6s ease;
+      transition: padding-top 1s ease, justify-content 1s ease;
     }
     .container.initial {
       justify-content: center;
@@ -44,12 +44,15 @@
       padding-top: 40px;
     }
 
-    /* タイトルは消さず、コンテナの移動で位置制御 */
+    /* タイトルはフェードせず、トランスフォームで位置を変える */
     #title {
       margin: 0;
       color: var(--accent);
       font-size: 2.4em;
-      transition: opacity .4s ease;
+      transition: transform 1s ease;
+    }
+    .container.starting #title {
+      transform: translateY(calc(-50vh + 40px));
     }
 
     .controls {
@@ -59,16 +62,15 @@
       justify-content: center;
       opacity: 1;
       transition: opacity .4s ease, transform .4s ease;
-      /* margin-top を個別に調整 */
     }
-    /* 開始前は縦並び */
+    /* 開始前画面は縦に整列しつつ、ボタンだけ別行 */
     #preStart {
       flex-direction: column;
       margin-top: 16px;
     }
-    /* ポストコントロールはカードより離す */
-    #postControls {
-      margin-top: 32px;
+    .btnGroup {
+      display: flex;
+      gap: 16px;
     }
     .controls.hidden {
       opacity: 0;
@@ -122,6 +124,7 @@
       margin-top: 32px;
     }
     .card {
+      width: 240px;
       background: #fff;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
@@ -129,13 +132,12 @@
       opacity: 0;
       transform: translateY(30px);
       animation: slideFadeIn .6s forwards;
-      width: 240px;
     }
     .card.completed { background: var(--accent-light); }
     .card h3 {
       margin: 0 0 8px;
       color: var(--accent);
-      text-align: left; /* ユーザ名は左寄せ */
+      text-align: left;   /* ユーザ名は左寄せ */
     }
     .card p.topic,
     .card p.point {
@@ -144,7 +146,7 @@
     }
     .actions {
       display: flex;
-      justify-content: flex-end; /* 達成未達成ボタンは右寄せ */
+      justify-content: flex-end; /* ボタンは右寄せ */
       margin-top: 12px;
     }
     .actions button {
@@ -160,6 +162,9 @@
     @keyframes slideFadeIn {
       to { opacity: 1; transform: translateY(0); }
     }
+
+    /* ポストコントロールはカードと離す */
+    #postControls { margin-top: 32px; }
 
     /* 結果発表 */
     #resultArea {
@@ -184,11 +189,11 @@
       margin: 24px 0;
     }
     .top-card {
+      width: 200px;
       opacity: 0;
       transform: translateY(30px);
       animation: slideFadeIn .6s forwards;
       text-align: center;
-      width: 200px;
     }
     .result-list {
       list-style: none;
@@ -205,9 +210,7 @@
       opacity: 0;
       animation: slideFadeIn .6s forwards;
     }
-    #menuBtn {
-      margin-top: 24px;
-    }
+    #menuBtn { margin-top: 24px; }
   </style>
 </head>
 <body>
@@ -219,8 +222,10 @@
       <p class="notice">
         ゲームを開始する前にメンバー管理から参加メンバーを追加してください
       </p>
-      <button id="startBtn" class="btn">ゲーム開始</button>
-      <button id="backBtn"  class="btn secondary">メインメニューに戻る</button>
+      <div class="btnGroup">
+        <button id="startBtn" class="btn">ゲーム開始</button>
+        <button id="backBtn"  class="btn secondary">メインメニューに戻る</button>
+      </div>
     </div>
 
     <!-- ゲーム中画面 -->
@@ -229,7 +234,7 @@
       <div id="cardsContainer" class="cards"></div>
       <div id="postControls" class="controls" style="display:none; opacity:0;">
         <button id="nextRoundBtn" class="btn">次のラウンド</button>
-        <button id="endBtn" class="btn secondary">ゲーム終了</button>
+        <button id="endBtn"        class="btn secondary">ゲーム終了</button>
       </div>
     </div>
 
@@ -245,7 +250,8 @@
   </div>
 
   <script>
-    const BASE_URL = 'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
+    const BASE_URL =
+      'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
     let users = [];
 
     const container    = document.getElementById('container');
@@ -257,11 +263,15 @@
     document.getElementById('startBtn').onclick = () => {
       preControls.style.display = 'none';
       container.classList.replace('initial','starting');
-      gameArea.style.display    = 'block';
-      spinner.style.display     = 'block';
-      startGame();
+      // タイトルのスライド完了まで待ってからスピナー＆ゲーム開始
+      setTimeout(() => {
+        gameArea.style.display = 'block';
+        spinner.style.display  = 'block';
+        startGame();
+      }, 1000); // CSSトランジションに合わせて 1s
     };
-    document.getElementById('backBtn').onclick = () => location.href = 'index.html';
+    document.getElementById('backBtn').onclick = () =>
+      location.href = 'index.html';
 
     document.getElementById('nextRoundBtn').onclick = () => {
       postControls.classList.add('hidden');
@@ -281,11 +291,11 @@
 
     async function startGame() {
       await fetch(BASE_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'reset' })
+        method:'POST',
+        body: JSON.stringify({ action:'reset' })
       });
       const resU = await fetch(`${BASE_URL}?action=getUsers`);
-      const { users: u } = await resU.json();
+      const { users:u } = await resU.json();
       users = u.map(x => x.name);
       if (!users.length) return alert('参加ユーザがいません');
       nextRound();
@@ -298,7 +308,7 @@
       const cont = document.getElementById('cardsContainer');
       cont.style.display = 'flex';
       cont.innerHTML = '';
-      topics.forEach((t, i) => {
+      topics.forEach((t,i) => {
         const c = document.createElement('div');
         c.className = 'card';
         c.style.animationDelay = `${i * 0.6}s`;
@@ -308,22 +318,21 @@
           <p class="topic">${t.topic}</p>
           <p class="point">${t.score}</p>
           <div class="actions">
-            <button class="achieve" onclick="onResult(${i}, true)">達成</button>
-            <button class="fail"    onclick="onResult(${i}, false)">未達成</button>
-          </div>
-        `;
+            <button class="achieve" onclick="onResult(${i},true)">達成</button>
+            <button class="fail"    onclick="onResult(${i},false)">未達成</button>
+          </div>`;
         cont.appendChild(c);
       });
     }
 
-    async function onResult(idx, ok) {
+    async function onResult(idx,ok) {
       const card = document.querySelector(`.card[data-idx="${idx}"]`);
       card.classList.add('completed');
-      card.querySelectorAll('button').forEach(b => b.disabled = true);
+      card.querySelectorAll('button').forEach(b=>b.disabled=true);
       if (ok) {
         await fetch(BASE_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'complete', name: users[idx] })
+          method:'POST',
+          body: JSON.stringify({ action:'complete', name: users[idx] })
         });
       }
       const done = [...document.querySelectorAll('.card')]
@@ -340,12 +349,12 @@
       resA.style.display = 'flex';
 
       const res = await fetch(`${BASE_URL}?action=getUsers`);
-      const { users: fu } = await res.json();
-      fu.sort((a, b) => b.score - a.score);
+      const { users:fu } = await res.json();
+      fu.sort((a,b) => b.score - a.score);
 
       const topC = document.getElementById('topContainer');
       topC.innerHTML = '';
-      [0, 1, 2].forEach(pos => {
+      [0,1,2].forEach(pos => {
         const u = fu[pos];
         const div = document.createElement('div');
         div.className = 'card top-card';
@@ -357,7 +366,7 @@
 
       const listC = document.getElementById('listContainer');
       listC.innerHTML = '';
-      fu.slice(3).forEach((u, i) => {
+      fu.slice(3).forEach((u,i) => {
         const li = document.createElement('li');
         const delay = 3 + i * 0.5;
         li.style.animationDelay = `${delay}s`;
@@ -365,13 +374,13 @@
         listC.appendChild(li);
       });
 
-      // 全順位アニメーション完了後に表示
-      const extraCount = fu.length - 3;
-      const lastDelay = 3 + (extraCount - 1) * 0.5;
-      const showTime = (lastDelay + 0.5) * 1000;
+      // 全順位が出揃ってからメニューボタン表示
+      const extra = fu.length - 3;
+      const lastDelay = 3 + (extra - 1) * 0.5;
+      const showMs = (lastDelay + 0.5) * 1000;
       const menuBtn = document.getElementById('menuBtn');
       menuBtn.onclick = () => location.href = 'index.html';
-      setTimeout(() => menuBtn.style.opacity = '1', showTime);
+      setTimeout(() => menuBtn.style.opacity = '1', showMs);
     }
   </script>
 </body>

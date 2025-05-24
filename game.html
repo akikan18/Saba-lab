@@ -32,8 +32,17 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: #fff;
     }
+    /* ── ここから追加 ── */
+    .container.initial {
+      justify-content: center;
+      padding-top: 0;
+    }
+    .container.starting {
+      justify-content: flex-start;
+      padding-top: 120px; /* 上部余白：タイトル位置40px＋タイトル高さ分 */
+    }
+    /* ── ここまで追加 ── */
 
     /* タイトルを絶対配置し、中央→上部へスライド */
     #title {
@@ -112,6 +121,7 @@
       padding: 0 16px;
       margin-top: 32px;
     }
+    /* 以下、省略せず前回提案と同じスタイル */
     .card {
       width: 240px;
       background: #fff;
@@ -151,7 +161,6 @@
     @keyframes slideFadeIn {
       to { opacity: 1; transform: translateY(0); }
     }
-
     #postControls { margin-top: 32px; }
 
     #resultArea {
@@ -250,7 +259,6 @@
     document.getElementById('startBtn').onclick = () => {
       preControls.style.display = 'none';
       container.classList.replace('initial','starting');
-      // タイトルのスライド完了まで待ってからスピナー＆ゲーム開始
       setTimeout(() => {
         gameArea.style.display = 'block';
         spinner.style.display  = 'block';
@@ -322,9 +330,7 @@
           body: JSON.stringify({ action:'complete', name: users[idx] })
         });
       }
-      const done = [...document.querySelectorAll('.card')]
-        .every(c => c.querySelector('button').disabled);
-      if (done) {
+      if ([...document.querySelectorAll('.card')].every(c => c.querySelector('button').disabled)) {
         postControls.style.display = 'flex';
         setTimeout(() => postControls.style.opacity = '1', 100);
       }
@@ -332,8 +338,7 @@
 
     async function endGame() {
       gameArea.style.display = 'none';
-      const resA = document.getElementById('resultArea');
-      resA.style.display = 'flex';
+      document.getElementById('resultArea').style.display = 'flex';
 
       const res = await fetch(`${BASE_URL}?action=getUsers`);
       const { users:fu } = await res.json();
@@ -345,8 +350,7 @@
         const u = fu[pos];
         const div = document.createElement('div');
         div.className = 'card top-card';
-        const delay = 0.5 + (2 - pos) * 0.8;
-        div.style.animationDelay = `${delay}s`;
+        div.style.animationDelay = `${0.5 + (2-pos)*0.8}s`;
         div.innerHTML = `<h3>#${pos+1} ${u.name}</h3><p>最終スコア: ${u.score}</p>`;
         topC.appendChild(div);
       });
@@ -355,18 +359,14 @@
       listC.innerHTML = '';
       fu.slice(3).forEach((u,i) => {
         const li = document.createElement('li');
-        const delay = 3 + i * 0.5;
-        li.style.animationDelay = `${delay}s`;
+        li.style.animationDelay = `${3 + i*0.5}s`;
         li.innerHTML = `<span>${i+4}. ${u.name}</span><span>${u.score}</span>`;
         listC.appendChild(li);
       });
 
-      const extra = fu.length - 3;
-      const lastDelay = 3 + (extra - 1) * 0.5;
-      const showMs = (lastDelay + 0.5) * 1000;
-      const menuBtn = document.getElementById('menuBtn');
-      menuBtn.onclick = () => location.href = 'index.html';
-      setTimeout(() => menuBtn.style.opacity = '1', showMs);
+      const lastDelay = 3 + (fu.length-4)*0.5;
+      setTimeout(() => document.getElementById('menuBtn').style.opacity = '1', (lastDelay+0.5)*1000);
+      document.getElementById('menuBtn').onclick = () => location.href = 'index.html';
     }
   </script>
 </body>

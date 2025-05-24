@@ -33,7 +33,7 @@
       flex-direction:column;
       align-items:center;
       background:#fff;
-      transition:padding-top .6s ease;
+      transition:padding-top .6s ease, justify-content .6s ease;
     }
     .container.initial {
       justify-content:center;
@@ -44,14 +44,11 @@
       padding-top:40px;
     }
     #title {
-      position:relative;
       margin:0;
       color:var(--accent);
       font-size:2.4em;
-      transition:transform .8s ease;
-    }
-    .container.starting #title {
-      transform: translateY(calc(-50vh + 40px));
+      /* transformは使わず、コンテナのpadding-topで位置調整 */
+      transition:opacity .4s ease;
     }
     .controls {
       display:flex;
@@ -233,7 +230,8 @@
   </div>
 
   <script>
-    const BASE_URL = 'https://script.google.com/macros/s/.../exec';
+    // 修正された実行URL
+    const BASE_URL = 'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
     let users = [];
 
     const container    = document.getElementById('container');
@@ -270,7 +268,7 @@
     };
 
     async function startGame() {
-      await fetch(BASE_URL, { method:'POST', body:JSON.stringify({action:'reset'}) });
+      await fetch(BASE_URL, { method: 'POST', body: JSON.stringify({ action: 'reset' }) });
       const resU = await fetch(`${BASE_URL}?action=getUsers`);
       const { users: u } = await resU.json();
       users = u.map(x => x.name);
@@ -329,7 +327,6 @@
       const { users: fu } = await res.json();
       fu.sort((a, b) => b.score - a.score);
 
-      // トップ3 は DOM 上は 1→2→3 のまま、アニメは 3→2→1
       const topC = document.getElementById('topContainer');
       topC.innerHTML = '';
       [0, 1, 2].forEach(pos => {

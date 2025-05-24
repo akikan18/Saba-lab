@@ -32,33 +32,35 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      background: #fff;
+      transition: padding-top 1s ease, justify-content 1s ease;
     }
-    /* ── ここから追加 ── */
     .container.initial {
       justify-content: center;
       padding-top: 0;
     }
     .container.starting {
       justify-content: flex-start;
-      padding-top: 120px; /* 上部余白：タイトル位置40px＋タイトル高さ分 */
+      /* タイトル(40px)＋大きめの余白80px */
+      padding-top: 120px;
     }
-    /* ── ここまで追加 ── */
 
-    /* タイトルを絶対配置し、中央→上部へスライド */
+    /* --- タイトル --- */
     #title {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      margin: 0;
+      /* 初期は通常のフロー */
+      margin: 0 0 16px;
       color: var(--accent);
       font-size: 2.4em;
       transition: top 1s ease, transform 1s ease;
-      z-index: 1;
     }
     .container.starting #title {
+      /* ゲーム開始時に絶対配置で上部へ */
+      position: absolute;
+      left: 50%;
       top: 40px;
-      transform: translateX(-50%) translateY(0);
+      transform: translateX(-50%);
+      margin-bottom: 0;
+      z-index: 1;
     }
 
     .controls {
@@ -71,7 +73,6 @@
     }
     #preStart {
       flex-direction: column;
-      margin-top: 16px;
     }
     .btnGroup {
       display: flex;
@@ -121,7 +122,6 @@
       padding: 0 16px;
       margin-top: 32px;
     }
-    /* 以下、省略せず前回提案と同じスタイル */
     .card {
       width: 240px;
       background: #fff;

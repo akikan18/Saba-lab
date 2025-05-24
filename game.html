@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -43,25 +44,31 @@
       justify-content:flex-start;
       padding-top:40px;
     }
+
+    /* タイトルは常に表示、スライドのみ */
     #title {
+      position:relative;
       margin:0;
       color:var(--accent);
       font-size:2.4em;
-      /* transformは使わず、コンテナのpadding-topで位置調整 */
-      transition:opacity .4s ease;
+      transition:transform .8s ease;
     }
+    .container.starting #title {
+      transform: translateY(calc(-50vh + 40px));
+    }
+
     .controls {
       display:flex;
       gap:16px;
       align-items:center;
+      justify-content:center;           /* 横中央寄せ */
       opacity:1;
       transition:opacity .4s ease, transform .4s ease;
       margin-top:16px;
     }
-    /* 開始前画面は縦並び */
+    /* 開始前は縦並び */
     #preStart {
       flex-direction:column;
-      align-items:center;
     }
     .controls.hidden {
       opacity:0;
@@ -93,6 +100,7 @@
     .btn.secondary:hover {
       background:#777;
     }
+
     .spinner {
       border:4px solid var(--accent-light);
       border-top:4px solid var(--accent);
@@ -102,6 +110,7 @@
       margin:40px auto;
     }
     @keyframes spin { to { transform:rotate(360deg); } }
+
     .cards {
       display:grid;
       grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
@@ -119,6 +128,7 @@
       opacity:0;
       transform:translateY(30px);
       animation:slideFadeIn .6s forwards;
+      text-align:left;                  /* テキスト左寄せ */
     }
     .card.completed {
       background:var(--accent-light);
@@ -130,12 +140,15 @@
     .card p {
       margin:4px 0;
     }
+
+    /* アクションボタンを中央寄せ */
     .actions {
+      display:flex;
+      justify-content:center;
       margin-top:12px;
-      text-align:right;
     }
     .actions button {
-      margin-left:8px;
+      margin:0 8px;
       padding:6px 12px;
       border:none;
       border-radius:var(--radius);
@@ -152,6 +165,7 @@
     @keyframes slideFadeIn {
       to { opacity:1; transform:translateY(0); }
     }
+
     #resultArea {
       position:absolute;
       top:0; left:0;
@@ -169,29 +183,21 @@
       animation:slideFadeIn .6s forwards .4s;
     }
     .result-top {
-      display:flex;
-      gap:24px;
-      margin:24px 0;
+      display:flex; gap:24px; margin:24px 0;
     }
     .top-card {
-      opacity:0;
-      transform:translateY(30px);
+      opacity:0; transform:translateY(30px);
       animation:slideFadeIn .6s forwards;
+      text-align:center;
     }
     .result-list {
-      list-style:none;
-      padding:0;
-      margin:16px 0;
-      width:100%;
-      max-width:400px;
+      list-style:none; padding:0; margin:16px 0;
+      width:100%; max-width:400px;
     }
     .result-list li {
-      display:flex;
-      justify-content:space-between;
-      padding:8px 12px;
-      border-bottom:1px solid #eee;
-      opacity:0;
-      animation:slideFadeIn .6s forwards;
+      display:flex; justify-content:space-between;
+      padding:8px 12px; border-bottom:1px solid #eee;
+      opacity:0; animation:slideFadeIn .6s forwards;
     }
   </style>
 </head>
@@ -230,7 +236,6 @@
   </div>
 
   <script>
-    // 修正された実行URL
     const BASE_URL = 'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
     let users = [];
 
@@ -247,9 +252,7 @@
       spinner.style.display     = 'block';
       startGame();
     };
-    document.getElementById('backBtn').onclick = () => {
-      location.href = 'index.html';
-    };
+    document.getElementById('backBtn').onclick = () => location.href = 'index.html';
 
     document.getElementById('nextRoundBtn').onclick = () => {
       postControls.classList.add('hidden');
@@ -268,80 +271,78 @@
     };
 
     async function startGame() {
-      await fetch(BASE_URL, { method: 'POST', body: JSON.stringify({ action: 'reset' }) });
+      await fetch(BASE_URL, { method:'POST', body:JSON.stringify({action:'reset'}) });
       const resU = await fetch(`${BASE_URL}?action=getUsers`);
-      const { users: u } = await resU.json();
-      users = u.map(x => x.name);
-      if (!users.length) return alert('参加ユーザがいません');
+      const {users:u} = await resU.json();
+      users = u.map(x=>x.name);
+      if(!users.length) return alert('参加ユーザがいません');
       nextRound();
     }
 
     async function nextRound() {
       const res = await fetch(`${BASE_URL}?action=getTopics&count=${users.length}`);
-      const { topics } = await res.json();
+      const {topics} = await res.json();
       spinner.style.display = 'none';
       const cont = document.getElementById('cardsContainer');
       cont.style.display = 'grid';
-      topics.forEach((t, i) => {
+      topics.forEach((t,i) => {
         const c = document.createElement('div');
         c.className = 'card';
-        c.style.animationDelay = `${i * 0.6}s`;
+        c.style.animationDelay = `${i*0.6}s`;
         c.dataset.idx = i;
         c.innerHTML = `
           <h3>${users[i]}</h3>
           <p>${t.topic}</p>
-          <p class="point">+${t.score}点</p>
+          <p class="point">${t.score}</p>
           <div class="actions">
-            <button class="achieve" onclick="onResult(${i}, true)">達成</button>
-            <button class="fail"    onclick="onResult(${i}, false)">未達成</button>
-          </div>
-        `;
+            <button class="achieve" onclick="onResult(${i},true)">達成</button>
+            <button class="fail"    onclick="onResult(${i},false)">未達成</button>
+          </div>`;
         cont.appendChild(c);
       });
     }
 
-    async function onResult(idx, ok) {
+    async function onResult(idx,ok) {
       const card = document.querySelector(`.card[data-idx="${idx}"]`);
       card.classList.add('completed');
-      card.querySelectorAll('button').forEach(b => b.disabled = true);
-      if (ok) {
+      card.querySelectorAll('button').forEach(b=>b.disabled=true);
+      if(ok) {
         await fetch(BASE_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'complete', name: users[idx] })
+          method:'POST',
+          body:JSON.stringify({action:'complete',name:users[idx]})
         });
       }
       const done = [...document.querySelectorAll('.card')]
-        .every(c => c.querySelector('button').disabled);
-      if (done) {
-        postControls.style.display = 'flex';
-        setTimeout(() => postControls.style.opacity = '1', 100);
+        .every(c=>c.querySelector('button').disabled);
+      if(done) {
+        postControls.style.display='flex';
+        setTimeout(()=>postControls.style.opacity='1',100);
       }
     }
 
     async function endGame() {
-      gameArea.style.display = 'none';
+      gameArea.style.display='none';
       const resA = document.getElementById('resultArea');
-      resA.style.display = 'flex';
-
+      resA.style.display='flex';
       const res = await fetch(`${BASE_URL}?action=getUsers`);
-      const { users: fu } = await res.json();
-      fu.sort((a, b) => b.score - a.score);
+      const {users:fu} = await res.json();
+      fu.sort((a,b)=>b.score-a.score);
 
       const topC = document.getElementById('topContainer');
       topC.innerHTML = '';
-      [0, 1, 2].forEach(pos => {
+      [0,1,2].forEach(pos=>{
         const u = fu[pos];
         const div = document.createElement('div');
-        div.className = 'card top-card';
-        const delay = 0.5 + (2 - pos) * 0.8;
+        div.className='card top-card';
+        const delay = 0.5 + (2-pos)*0.8;
         div.style.animationDelay = `${delay}s`;
         div.innerHTML = `<h3>#${pos+1} ${u.name}</h3><p>最終スコア: ${u.score}</p>`;
         topC.appendChild(div);
       });
 
       const listC = document.getElementById('listContainer');
-      listC.innerHTML = '';
-      fu.slice(3).forEach((u, i) => {
+      listC.innerHTML='';
+      fu.slice(3).forEach((u,i)=>{
         const li = document.createElement('li');
         li.style.animationDelay = `${3 + i*0.5}s`;
         li.innerHTML = `<span>${i+4}. ${u.name}</span><span>${u.score}</span>`;
@@ -349,9 +350,10 @@
       });
 
       const menuBtn = document.getElementById('menuBtn');
-      menuBtn.onclick = () => location.href = 'index.html';
-      setTimeout(() => menuBtn.style.opacity = '1', 3500);
+      menuBtn.onclick = () => location.href='index.html';
+      setTimeout(()=>menuBtn.style.opacity='1',3500);
     }
   </script>
 </body>
 </html>
+```

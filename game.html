@@ -33,26 +33,28 @@
       flex-direction: column;
       align-items: center;
       background: #fff;
-      transition: padding-top 1s ease; /* justify-content はアニメーション出来ないので除外 */
+      transition: padding-top 1s ease, justify-content 1s ease;
+    }
+    .container.initial {
+      justify-content: center;
+      padding-top: 0;
+    }
+    .container.starting {
+      justify-content: flex-start;
+      padding-top: 40px;
     }
 
-    .container.initial { justify-content: center; padding-top: 0; }
-    .container.starting{ justify-content: flex-start; padding-top: 40px; }
-
-    /* ---------------------- タイトル ---------------------- */
+    /* タイトルはフェードせず、トランスフォームで位置を変える */
     #title {
       margin: 0;
       color: var(--accent);
       font-size: 2.4em;
       transition: transform 1s ease;
     }
-    /* ゲーム開始で付与されるクラス。中央→上部へスライド */
-    #title.slide {
+    .container.starting #title {
       transform: translateY(calc(-50vh + 40px));
     }
-    /* ↑transform は slide クラスだけが担当し、container クラス変更時には触れない */
 
-    /* ---------------------- 共通 UI ---------------------- */
     .controls {
       display: flex;
       gap: 16px;
@@ -61,59 +63,147 @@
       opacity: 1;
       transition: opacity .4s ease, transform .4s ease;
     }
+    /* 開始前は縦並び、ボタンは横並びのグループ */
     #preStart { flex-direction: column; margin-top: 16px; }
     .btnGroup { display: flex; gap: 16px; }
-    .controls.hidden { opacity: 0; transform: translateY(20px); }
-
+    .controls.hidden {
+      opacity: 0;
+      transform: translateY(20px);
+    }
     .notice {
-      margin: 0 0 16px; color: var(--text-secondary); font-size: 1em; text-align: center;
+      margin: 0 0 16px;
+      color: var(--text-secondary);
+      font-size: 1em;
+      text-align: center;
     }
     .btn {
-      padding: 12px 28px; font-size: 1em; border: none; border-radius: var(--radius);
-      cursor: pointer; background: var(--accent); color: #fff; box-shadow: var(--shadow);
+      padding: 12px 28px;
+      font-size: 1em;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      box-shadow: var(--shadow);
       transition: transform .3s, background .3s, opacity .4s;
     }
-    .btn:hover { transform: translateY(-2px); }
-    .btn.secondary { background: #999; }
-    .btn.secondary:hover { background: #777; }
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+    .btn.secondary {
+      background: #999;
+    }
+    .btn.secondary:hover {
+      background: #777;
+    }
 
     .spinner {
-      border: 4px solid var(--accent-light); border-top: 4px solid var(--accent);
-      border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite;
+      border: 4px solid var(--accent-light);
+      border-top: 4px solid var(--accent);
+      border-radius: 50%;
+      width: 60px; height: 60px;
+      animation: spin 1s linear infinite;
       margin: 40px auto;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* カード一覧をフレックスで中央寄せ */
     .cards {
-      display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; width: 100%;
-      padding: 0 16px; margin-top: 32px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 24px;
+      width: 100%;
+      padding: 0 16px;
+      margin-top: 32px;
     }
     .card {
-      width: 240px; background: #fff; border-radius: var(--radius); box-shadow: var(--shadow);
-      padding: 16px; opacity: 0; transform: translateY(30px); animation: slideFadeIn .6s forwards;
+      width: 240px;
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      opacity: 0;
+      transform: translateY(30px);
+      animation: slideFadeIn .6s forwards;
     }
     .card.completed { background: var(--accent-light); }
-    .card h3 { margin: 0 0 8px; color: var(--accent); text-align: left; }
-    .card p.topic, .card p.point { margin: 4px 0; text-align: center; }
-    .actions { display: flex; justify-content: flex-end; margin-top: 12px; }
-    .actions button { margin-left: 8px; padding: 6px 12px; border: none; border-radius: var(--radius); cursor: pointer; }
+    .card h3 {
+      margin: 0 0 8px;
+      color: var(--accent);
+      text-align: left;   /* ユーザ名は左寄せ */
+    }
+    .card p.topic,
+    .card p.point {
+      margin: 4px 0;
+      text-align: center; /* お題・点数は中央 */
+    }
+    .actions {
+      display: flex;
+      justify-content: flex-end; /* 達成未達成ボタンは右寄せ */
+      margin-top: 12px;
+    }
+    .actions button {
+      margin-left: 8px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
     .achieve { background: #4caf50; color: #fff; }
     .fail    { background: #ccc;    color: #333; }
-    @keyframes slideFadeIn { to { opacity: 1; transform: translateY(0); } }
 
+    @keyframes slideFadeIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ポストコントロールはカードより離す */
     #postControls { margin-top: 32px; }
 
-    /* --------- 結果発表 --------- */
+    /* 結果発表 */
     #resultArea {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff;
-      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-      padding-top: 80px; overflow-y: auto;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 80px;
+      overflow-y: auto;
     }
-    #resultArea h2 { opacity: 0; animation: slideFadeIn .6s forwards .4s; }
-    .result-top { display: flex; gap: 24px; margin: 24px 0; }
-    .top-card { width: 200px; opacity: 0; transform: translateY(30px); animation: slideFadeIn .6s forwards; text-align: center; }
-    .result-list { list-style: none; padding: 0; margin: 16px 0; width: 100%; max-width: 400px; }
-    .result-list li { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #eee; opacity: 0; animation: slideFadeIn .6s forwards; }
+    #resultArea h2 {
+      opacity: 0;
+      animation: slideFadeIn .6s forwards .4s;
+    }
+    .result-top {
+      display: flex;
+      gap: 24px;
+      margin: 24px 0;
+    }
+    .top-card {
+      width: 200px;
+      opacity: 0;
+      transform: translateY(30px);
+      animation: slideFadeIn .6s forwards;
+      text-align: center;
+    }
+    .result-list {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0;
+      width: 100%;
+      max-width: 400px;
+    }
+    .result-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid #eee;
+      opacity: 0;
+      animation: slideFadeIn .6s forwards;
+    }
     #menuBtn { margin-top: 24px; }
   </style>
 </head>
@@ -123,7 +213,9 @@
 
     <!-- 開始前画面 -->
     <div id="preStart" class="controls">
-      <p class="notice">ゲームを開始する前にメンバー管理から参加メンバーを追加してください</p>
+      <p class="notice">
+        ゲームを開始する前にメンバー管理から参加メンバーを追加してください
+      </p>
       <div class="btnGroup">
         <button id="startBtn" class="btn">ゲーム開始</button>
         <button id="backBtn"  class="btn secondary">メインメニューに戻る</button>
@@ -145,42 +237,44 @@
       <h2>結果発表</h2>
       <div id="topContainer" class="result-top"></div>
       <ul id="listContainer" class="result-list"></ul>
-      <button id="menuBtn" class="btn secondary" style="opacity:0;">メインメニューに戻る</button>
+      <button id="menuBtn" class="btn secondary" style="opacity:0;">
+        メインメニューに戻る
+      </button>
     </div>
   </div>
 
   <script>
-    const BASE_URL = 'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
+    const BASE_URL =
+      'https://script.google.com/macros/s/AKfycbxLJh7UP2cDzVuX8l1huPPjDtC9iumurb1vLs_n8LiosJX6jxlAcdw8gR2Iz2r05ssm/exec';
     let users = [];
 
     const container    = document.getElementById('container');
-    const title        = document.getElementById('title');
     const preControls  = document.getElementById('preStart');
     const gameArea     = document.getElementById('gameArea');
     const spinner      = document.getElementById('spinner');
     const postControls = document.getElementById('postControls');
 
-    /* ------------------ ゲーム開始ボタン ------------------ */
     document.getElementById('startBtn').onclick = () => {
-      // 1) 事前画面を隠す
       preControls.style.display = 'none';
-      // 2) タイトルを中央→上部へスライド
-      title.classList.add('slide');
-      // 3) スライドが終わったら container のレイアウトを切り替え、ゲームを開始
-      title.addEventListener('transitionend', () => {
-        container.classList.replace('initial','starting'); // ゲームレイアウトへ
-        title.classList.remove('slide');                   // transform を解除（位置は固定）
-        gameArea.style.display = 'block';
-        spinner.style.display  = 'block';
+      gameArea.style.display    = 'block';   // ゲームエリアは即表示
+      container.classList.replace('initial','starting');
+      // タイトルスライド完了後にスピナー＆ゲーム開始
+      setTimeout(() => {
+        spinner.style.display = 'block';    // スピナーは隠れてからフェードしないように
         startGame();
-      }, { once:true });
+      }, 1000);  // CSSトランジションDurationに合わせる
     };
-
-    document.getElementById('backBtn').onclick = () => location.href = 'index.html';
+    document.getElementById('backBtn').onclick = () =>
+      location.href = 'index.html';
 
     document.getElementById('nextRoundBtn').onclick = () => {
+      // ボタンを非表示に
       postControls.classList.add('hidden');
-      setTimeout(() => { postControls.style.display = 'none'; postControls.classList.remove('hidden'); }, 400);
+      setTimeout(() => {
+        postControls.style.display = 'none';
+        postControls.classList.remove('hidden');
+      }, 400);
+      // カードクリア＆スピナー
       const cont = document.getElementById('cardsContainer');
       cont.innerHTML = '';
       cont.style.display = 'none';
@@ -191,7 +285,6 @@
       if (confirm('ゲームを終了してよろしいですか？')) endGame();
     };
 
-    /* ------------------ ゲームロジック ------------------ */
     async function startGame() {
       await fetch(BASE_URL, { method:'POST', body: JSON.stringify({ action:'reset' }) });
       const resU = await fetch(`${BASE_URL}?action=getUsers`);
@@ -228,11 +321,15 @@
     async function onResult(idx,ok) {
       const card = document.querySelector(`.card[data-idx="${idx}"]`);
       card.classList.add('completed');
-      card.querySelectorAll('button').forEach(b=>b.disabled=true);
+      card.querySelectorAll('button').forEach(b => b.disabled = true);
       if (ok) {
-        await fetch(BASE_URL, { method:'POST', body: JSON.stringify({ action:'complete', name: users[idx] }) });
+        await fetch(BASE_URL, {
+          method:'POST',
+          body: JSON.stringify({ action:'complete', name: users[idx] })
+        });
       }
-      const done = [...document.querySelectorAll('.card')].every(c => c.querySelector('button').disabled);
+      const done = [...document.querySelectorAll('.card')]
+        .every(c => c.querySelector('button').disabled);
       if (done) {
         postControls.style.display = 'flex';
         setTimeout(() => postControls.style.opacity = '1', 100);
@@ -270,6 +367,7 @@
         listC.appendChild(li);
       });
 
+      // 全順位アニメーション完了後にメニューボタン表示
       const extra = fu.length - 3;
       const lastDelay = 3 + (extra - 1) * 0.5;
       const showMs = (lastDelay + 0.5) * 1000;

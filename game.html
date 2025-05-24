@@ -33,26 +33,23 @@
       flex-direction: column;
       align-items: center;
       background: #fff;
-      transition: padding-top 1s ease, justify-content 1s ease;
-    }
-    .container.initial {
-      justify-content: center;
-      padding-top: 0;
-    }
-    .container.starting {
-      justify-content: flex-start;
-      padding-top: 40px;
     }
 
-    /* タイトルはフェードせず、トランスフォームで位置を変える */
+    /* タイトルを絶対配置し、中央→上部へスライド */
     #title {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
       margin: 0;
       color: var(--accent);
       font-size: 2.4em;
-      transition: transform 1s ease;
+      transition: top 1s ease, transform 1s ease;
+      z-index: 1;
     }
     .container.starting #title {
-      transform: translateY(calc(-50vh + 40px));
+      top: 40px;
+      transform: translateX(-50%) translateY(0);
     }
 
     .controls {
@@ -63,9 +60,14 @@
       opacity: 1;
       transition: opacity .4s ease, transform .4s ease;
     }
-    /* 開始前は縦並び、ボタンは横並びのグループ */
-    #preStart { flex-direction: column; margin-top: 16px; }
-    .btnGroup { display: flex; gap: 16px; }
+    #preStart {
+      flex-direction: column;
+      margin-top: 16px;
+    }
+    .btnGroup {
+      display: flex;
+      gap: 16px;
+    }
     .controls.hidden {
       opacity: 0;
       transform: translateY(20px);
@@ -87,15 +89,9 @@
       box-shadow: var(--shadow);
       transition: transform .3s, background .3s, opacity .4s;
     }
-    .btn:hover {
-      transform: translateY(-2px);
-    }
-    .btn.secondary {
-      background: #999;
-    }
-    .btn.secondary:hover {
-      background: #777;
-    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn.secondary { background: #999; }
+    .btn.secondary:hover { background: #777; }
 
     .spinner {
       border: 4px solid var(--accent-light);
@@ -107,7 +103,6 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* カード一覧をフレックスで中央寄せ */
     .cards {
       display: flex;
       flex-wrap: wrap;
@@ -131,16 +126,16 @@
     .card h3 {
       margin: 0 0 8px;
       color: var(--accent);
-      text-align: left;   /* ユーザ名は左寄せ */
+      text-align: left;
     }
     .card p.topic,
     .card p.point {
       margin: 4px 0;
-      text-align: center; /* お題・点数は中央 */
+      text-align: center;
     }
     .actions {
       display: flex;
-      justify-content: flex-end; /* 達成未達成ボタンは右寄せ */
+      justify-content: flex-end;
       margin-top: 12px;
     }
     .actions button {
@@ -157,10 +152,8 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* ポストコントロールはカードより離す */
     #postControls { margin-top: 32px; }
 
-    /* 結果発表 */
     #resultArea {
       position: absolute;
       top: 0; left: 0;
@@ -256,25 +249,23 @@
 
     document.getElementById('startBtn').onclick = () => {
       preControls.style.display = 'none';
-      gameArea.style.display    = 'block';   // ゲームエリアは即表示
       container.classList.replace('initial','starting');
-      // タイトルスライド完了後にスピナー＆ゲーム開始
+      // タイトルのスライド完了まで待ってからスピナー＆ゲーム開始
       setTimeout(() => {
-        spinner.style.display = 'block';    // スピナーは隠れてからフェードしないように
+        gameArea.style.display = 'block';
+        spinner.style.display  = 'block';
         startGame();
-      }, 1000);  // CSSトランジションDurationに合わせる
+      }, 1000);
     };
     document.getElementById('backBtn').onclick = () =>
       location.href = 'index.html';
 
     document.getElementById('nextRoundBtn').onclick = () => {
-      // ボタンを非表示に
       postControls.classList.add('hidden');
       setTimeout(() => {
         postControls.style.display = 'none';
         postControls.classList.remove('hidden');
       }, 400);
-      // カードクリア＆スピナー
       const cont = document.getElementById('cardsContainer');
       cont.innerHTML = '';
       cont.style.display = 'none';
@@ -286,7 +277,10 @@
     };
 
     async function startGame() {
-      await fetch(BASE_URL, { method:'POST', body: JSON.stringify({ action:'reset' }) });
+      await fetch(BASE_URL, {
+        method:'POST',
+        body: JSON.stringify({ action:'reset' })
+      });
       const resU = await fetch(`${BASE_URL}?action=getUsers`);
       const { users:u } = await resU.json();
       users = u.map(x => x.name);
@@ -321,7 +315,7 @@
     async function onResult(idx,ok) {
       const card = document.querySelector(`.card[data-idx="${idx}"]`);
       card.classList.add('completed');
-      card.querySelectorAll('button').forEach(b => b.disabled = true);
+      card.querySelectorAll('button').forEach(b=>b.disabled=true);
       if (ok) {
         await fetch(BASE_URL, {
           method:'POST',
@@ -367,7 +361,6 @@
         listC.appendChild(li);
       });
 
-      // 全順位アニメーション完了後にメニューボタン表示
       const extra = fu.length - 3;
       const lastDelay = 3 + (extra - 1) * 0.5;
       const showMs = (lastDelay + 0.5) * 1000;
